@@ -34,3 +34,11 @@ pub fn search_matched_attr(
         }
     }
 }
+
+pub fn match_statement(element_name: &String) -> bool {
+    *element_name == "select"
+        || *element_name == "insert"
+        || *element_name == "update"
+        || *element_name == "delete"
+        || *element_name == "statement"
+}

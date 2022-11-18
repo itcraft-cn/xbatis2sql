@@ -46,12 +46,7 @@ fn read_xml(filename: &String, sql_store: &mut Vec<String>) {
                 name, attributes, ..
             }) => {
                 let element_name = name.local_name.as_str().to_ascii_lowercase();
-                if element_name == "select"
-                    || element_name == "insert"
-                    || element_name == "update"
-                    || element_name == "delete"
-                    || element_name == "statement"
-                {
+                if parse_helper::match_statement(&element_name) {
                     in_statement = true;
                     parse_helper::search_matched_attr(&attributes, "id", |attr| {
                         sql_store.push("-- ".to_string() + attr.value.as_str());
@@ -75,17 +70,11 @@ fn read_xml(filename: &String, sql_store: &mut Vec<String>) {
                     parse_helper::search_matched_attr(&attributes, "id", |attr| {
                         include_temp_sqls_ids.insert(attr.value.as_str().to_string(), sql_idx);
                     });
-                } else {
                 }
             }
             Ok(XmlEvent::EndElement { name }) => {
                 let element_name = name.local_name.as_str().to_ascii_lowercase();
-                if element_name == "select"
-                    || element_name == "insert"
-                    || element_name == "update"
-                    || element_name == "delete"
-                    || element_name == "statement"
-                {
+                if parse_helper::match_statement(&element_name) {
                     let sql = parse_helper::replace_included_sql(
                         &mut builder,
                         &include_temp_sqls,
