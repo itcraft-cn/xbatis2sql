@@ -1,6 +1,11 @@
 use log::*;
 use regex::Regex;
+use std::fs::File;
+use std::io::Write;
+use std::process;
 use std::*;
+
+const CRLF: [u8; 1] = [0x0a];
 
 pub trait Parser {
     fn parse(&self, output_dir: &String, files: &Vec<String>) {
@@ -43,8 +48,36 @@ pub trait Parser {
 
     fn save(&self, output_dir: &String, sql_store: Vec<String>) {
         info!("write to {:?} sql size: {:?}", output_dir, sql_store.len());
-        for sql in sql_store {
-            info!("{:?}", sql);
+        let r = File::create(output_dir.to_string() + "/result.sql");
+        if r.is_err() {
+            warn!("try to write sql to {:?} failed", output_dir);
+            process::exit(-1);
         }
+        let mut f = r.unwrap();
+        for sql in sql_store {
+            write2file(&mut f, sql, output_dir);
+            writeln(&mut f, output_dir);
+        }
+        let fr = f.flush();
+        if fr.is_err() {
+            warn!("try to flush file {:?} failed", f);
+            process::exit(-1);
+        }
+    }
+}
+
+fn write2file(f: &mut File, sql: String, output_dir: &String) {
+    let wr = f.write(sql.as_bytes());
+    if wr.is_err() {
+        warn!("try to write sql[{:?}] to {:?} failed", sql, output_dir);
+        process::exit(-1);
+    }
+}
+
+fn writeln(f: &mut File, output_dir: &String) {
+    let wr = f.write(&CRLF);
+    if wr.is_err() {
+        warn!("try to write crlf to {:?} failed", output_dir);
+        process::exit(-1);
     }
 }
