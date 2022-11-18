@@ -3,7 +3,7 @@ name = "tosql"
 version = "0.1.0"
 edition = "2021"
 authors = ["Helly Guo <hellyguo@foxmail.com>"]
-exclude = ["tests"]
+exclude = ["tests", "examples"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -14,3 +14,4 @@ walkdir = "2.3.2"
 regex = "1.5.4"
 lazy_static = "1.4.0"
 xml-rs = "0.8.4"
+rstring-builder = "0.1.4"

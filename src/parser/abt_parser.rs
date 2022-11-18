@@ -4,14 +4,14 @@ use std::*;
 
 pub trait Parser {
     fn parse(&self, output_dir: &String, files: &Vec<String>) {
-        let sql_store: Vec<String> = Vec::new();
+        let mut sql_store: Vec<String> = Vec::new();
         for file in files {
-            self.check_and_parse(file, &sql_store);
+            self.check_and_parse(file, &mut sql_store);
         }
         self.save(output_dir, sql_store);
     }
 
-    fn check_and_parse(&self, file: &String, sql_store: &Vec<String>) {
+    fn check_and_parse(&self, file: &String, sql_store: &mut Vec<String>) {
         if self.detect_match(file) {
             info!("{:?}", file);
             self.read_and_parse(file, sql_store);
@@ -35,11 +35,12 @@ pub trait Parser {
         }
     }
 
-    fn read_and_parse(&self, file: &String, sql_store: &Vec<String>);
+    fn read_and_parse(&self, file: &String, sql_store: &mut Vec<String>);
 
-    fn save(&self, dir: &String, sql_store: Vec<String>) {
+    fn save(&self, output_dir: &String, sql_store: Vec<String>) {
+        info!("write to {:?} sql size: {:?}", output_dir, sql_store.len());
         for sql in sql_store {
-            info!("{:?} {:?}", dir, sql);
+            info!("{:?}", sql);
         }
     }
 }
