@@ -63,6 +63,8 @@ fn read_xml(filename: &String, sql_store: &mut Vec<String>) {
                     }
                 } else if in_statement && element_name == "where" {
                     builder.append("where ");
+                } else if in_statement && element_name == "set" {
+                    builder.append("set ");
                 } else if in_statement && element_name == "include" {
                     for attr in attributes {
                         if attr.name.local_name.as_str() == "refid" {
