@@ -53,38 +53,26 @@ fn read_xml(filename: &String, sql_store: &mut Vec<String>) {
                     || element_name == "statement"
                 {
                     in_statement = true;
-                    for attr in attributes {
-                        if attr.name.local_name.as_str() == "id" {
-                            sql_store.push("-- ".to_string() + attr.value.as_str());
-                            break;
-                        }
-                    }
+                    parse_helper::search_matched_attr(&attributes, "id", |attr| {
+                        sql_store.push("-- ".to_string() + attr.value.as_str());
+                    });
                 } else if in_statement && element_name == "where" {
                     builder.append("where ");
                 } else if in_statement && element_name == "include" {
-                    for attr in attributes {
-                        if attr.name.local_name.as_str() == "refid" {
-                            builder.append("__INCLUDE_ID_");
-                            builder.append(attr.value);
-                            builder.append("_END__");
-                            break;
-                        }
-                    }
+                    parse_helper::search_matched_attr(&attributes, "refid", |attr| {
+                        builder.append("__INCLUDE_ID_");
+                        builder.append(attr.value.as_str());
+                        builder.append("_END__");
+                    });
                 } else if in_statement {
-                    for attr in attributes {
-                        if attr.name.local_name.as_str() == "prepend" {
-                            builder.append(attr.value.as_str());
-                            break;
-                        }
-                    }
+                    parse_helper::search_matched_attr(&attributes, "prepend", |attr| {
+                        builder.append(attr.value.as_str());
+                    });
                 } else if element_name == "sql" {
                     in_sql = true;
-                    for attr in attributes {
-                        if attr.name.local_name.as_str() == "id" {
-                            include_temp_sqls_ids.insert(attr.value, sql_idx);
-                            break;
-                        }
-                    }
+                    parse_helper::search_matched_attr(&attributes, "id", |attr| {
+                        include_temp_sqls_ids.insert(attr.value.as_str().to_string(), sql_idx);
+                    });
                 } else {
                 }
             }

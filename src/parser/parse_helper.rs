@@ -1,6 +1,7 @@
 use rstring_builder::StringBuilder;
 use std::collections::HashMap;
 use std::*;
+use xml::attribute::*;
 
 pub fn replace_included_sql(
     builder: &mut StringBuilder,
@@ -19,4 +20,17 @@ pub fn replace_included_sql(
     }
     builder.clear();
     return sql;
+}
+
+pub fn search_matched_attr(
+    attributes: &Vec<OwnedAttribute>,
+    matched_name: &str,
+    mut f: impl FnMut(&OwnedAttribute),
+) {
+    for attr in attributes {
+        if attr.name.local_name.as_str() == matched_name {
+            f(attr);
+            break;
+        }
+    }
 }
