@@ -21,11 +21,10 @@ impl Parser for MyBatisParser {
         return self.detect_match_with_regex(file, &RE);
     }
 
-    fn read_and_parse(&self, file: &String, sql_store: &Vec<String>) -> Vec<String> {
+    fn read_and_parse(&self, file: &String, sql_store: &Vec<String>) {
         info!(">>{:?}", file);
         for sql in sql_store {
             info!("{:?}", sql);
         }
-        return Vec::new();
     }
 }

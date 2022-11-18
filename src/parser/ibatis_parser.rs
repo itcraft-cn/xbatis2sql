@@ -5,6 +5,8 @@ use std::*;
 
 use super::abt_parser::Parser;
 
+use xml::reader::{EventReader, XmlEvent};
+
 const PARSER: IBatisParser = IBatisParser {};
 
 pub fn parse(output_dir: &String, files: &Vec<String>) {
@@ -21,11 +23,32 @@ impl Parser for IBatisParser {
         return self.detect_match_with_regex(file, &RE);
     }
 
-    fn read_and_parse(&self, file: &String, sql_store: &Vec<String>) -> Vec<String> {
-        info!(">>{:?}", file);
-        for sql in sql_store {
-            info!("{:?}", sql);
+    fn read_and_parse(&self, file: &String, sql_store: &Vec<String>) {
+        read_xml(file, sql_store);
+    }
+}
+
+fn read_xml(filename: &String, sql_store: &Vec<String>) {
+    let file = fs::File::open(filename).unwrap();
+    let buf = io::BufReader::new(file);
+
+    let parser = EventReader::new(buf);
+    for e in parser {
+        match e {
+            Ok(XmlEvent::StartElement { name, .. }) => {
+                info!("+{}", name);
+            }
+            Ok(XmlEvent::EndElement { name }) => {
+                info!("-{}", name);
+            }
+            Err(e) => {
+                info!("Error: {}", e);
+                break;
+            }
+            _ => {}
         }
-        return Vec::new();
+    }
+    for sql in sql_store {
+        info!("{:?}", sql);
     }
 }

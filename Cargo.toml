@@ -8,8 +8,9 @@ exclude = ["tests"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-log = "0.4"
+log = "0.4.14"
 simplelog = "0.10.2"
 walkdir = "2.3.2"
 regex = "1.5.4"
 lazy_static = "1.4.0"
+xml-rs = "0.8.4"

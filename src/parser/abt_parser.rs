@@ -35,7 +35,7 @@ pub trait Parser {
         }
     }
 
-    fn read_and_parse(&self, file: &String, sql_store: &Vec<String>) -> Vec<String>;
+    fn read_and_parse(&self, file: &String, sql_store: &Vec<String>);
 
     fn save(&self, dir: &String, sql_store: Vec<String>) {
         for sql in sql_store {
