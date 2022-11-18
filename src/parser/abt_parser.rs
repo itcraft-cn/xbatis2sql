@@ -1,4 +1,6 @@
 use log::*;
+use regex::Regex;
+use std::*;
 
 pub trait Parser {
     fn parse(&self, files: &Vec<String>) {
@@ -17,6 +19,21 @@ pub trait Parser {
     }
 
     fn detect_match(&self, file: &String) -> bool;
+
+    fn detect_match_with_regex(&self, file: &String, re: &Regex) -> bool {
+        debug!(">>{:?}", file);
+        let result = fs::read_to_string(file);
+        if result.is_ok() {
+            let text = result.unwrap();
+            let is_match = re.is_match(text.as_str());
+            if is_match {
+                debug!("{:?}", text);
+            }
+            return is_match;
+        } else {
+            return false;
+        }
+    }
 
     fn read_and_parse(&self, file: &String, sql_store: &Vec<String>) -> Vec<String>;
 
