@@ -3,12 +3,12 @@ use regex::Regex;
 use std::*;
 
 pub trait Parser {
-    fn parse(&self, files: &Vec<String>) {
+    fn parse(&self, output_dir: &String, files: &Vec<String>) {
         let sql_store: Vec<String> = Vec::new();
         for file in files {
             self.check_and_parse(file, &sql_store);
         }
-        self.save(sql_store);
+        self.save(output_dir, sql_store);
     }
 
     fn check_and_parse(&self, file: &String, sql_store: &Vec<String>) {
@@ -37,9 +37,9 @@ pub trait Parser {
 
     fn read_and_parse(&self, file: &String, sql_store: &Vec<String>) -> Vec<String>;
 
-    fn save(&self, sql_store: Vec<String>) {
+    fn save(&self, dir: &String, sql_store: Vec<String>) {
         for sql in sql_store {
-            info!("{:?}", sql);
+            info!("{:?} {:?}", dir, sql);
         }
     }
 }

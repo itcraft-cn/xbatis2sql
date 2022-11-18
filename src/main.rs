@@ -15,10 +15,10 @@ fn main() {
     init_logger();
     let args: Vec<String> = env::args().collect();
     let args_len: u8 = args.len() as u8 - 1;
-    if args_len == 2 {
-        choose_parser(&args[1], &args[2]);
+    if args_len == 3 {
+        choose_parser(&args[1], &args[2], &args[3]);
     } else {
-        warn!("just need two arguments, got {} argument(s)", args_len);
+        warn!("just need three arguments, got {} argument(s)", args_len);
         process::exit(-1);
     }
 }
@@ -40,29 +40,23 @@ fn init_logger() {
     .unwrap();
 }
 
-fn choose_parser(mode: &String, dir: &String) {
-    if mode == "ibatis" {
-        info!("try to parse ibatis sqlmap files in {:?}", dir);
-        parse_ibatis(dir);
-    } else if mode == "mybatis" {
-        info!("try to parse mybatis mapper files in {:?}", dir);
-        parse_mybatis(dir);
+fn choose_parser(mode: &String, src_dir: &String, output_dir: &String) {
+    let match_ibatis = mode == "ibatis";
+    let match_mybatis = mode == "mybatis";
+    if match_ibatis || match_mybatis {
+        info!(
+            "try to parse files in {:?}, fetch sql to {:?}",
+            src_dir, output_dir
+        );
+        let mut files: Vec<String> = Vec::new();
+        xml_scanner::scan(&mut files, src_dir);
+        if match_ibatis {
+            ibatis_parser::parse(output_dir, &files);
+        } else {
+            mybatis_parser::parse(output_dir, &files);
+        }
     } else {
         warn!("not supported: {:?}", mode);
         process::exit(-1);
     }
-}
-
-fn parse_ibatis(dir: &String) {
-    debug!("{:?}", dir);
-    let mut files: Vec<String> = Vec::new();
-    xml_scanner::scan(&mut files, dir);
-    ibatis_parser::parse(&files);
-}
-
-fn parse_mybatis(dir: &String) {
-    debug!("{:?}", dir);
-    let mut files: Vec<String> = Vec::new();
-    xml_scanner::scan(&mut files, dir);
-    mybatis_parser::parse(&files);
 }

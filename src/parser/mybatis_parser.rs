@@ -7,8 +7,8 @@ use super::abt_parser::Parser;
 
 const PARSER: MyBatisParser = MyBatisParser {};
 
-pub fn parse(files: &Vec<String>) {
-    PARSER.parse(files);
+pub fn parse(output_dir: &String, files: &Vec<String>) {
+    PARSER.parse(output_dir, files);
 }
 
 struct MyBatisParser {}
