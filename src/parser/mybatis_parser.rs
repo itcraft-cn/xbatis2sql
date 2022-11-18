@@ -24,86 +24,82 @@ impl Parser for MyBatisParser {
         return self.detect_match_with_regex(file, &RE);
     }
 
-    fn read_and_parse(&self, file: &String, sql_store: &mut Vec<String>) {
-        read_xml(file, sql_store);
-    }
-}
-
-fn read_xml(filename: &String, sql_store: &mut Vec<String>) {
-    let file = fs::File::open(filename).unwrap();
-    let buf = io::BufReader::new(file);
-    let parser = EventReader::new(buf);
-    let mut in_statement: bool = false;
-    let mut in_sql: bool = false;
-    let mut sql_idx: i32 = 0;
-    let mut builder = StringBuilder::new();
-    sql_store.push("-- ".to_string() + filename);
-    let mut include_temp_sqls: HashMap<i32, String> = HashMap::new();
-    let mut include_temp_sqls_ids: HashMap<String, i32> = HashMap::new();
-    for e in parser {
-        match e {
-            Ok(XmlEvent::StartElement {
-                name, attributes, ..
-            }) => {
-                let element_name = name.local_name.as_str().to_ascii_lowercase();
-                if parse_helper::match_statement(&element_name) {
-                    in_statement = true;
-                    parse_helper::search_matched_attr(&attributes, "id", |attr| {
-                        sql_store.push("-- ".to_string() + attr.value.as_str());
-                    });
-                } else if in_statement && element_name == "where" {
-                    builder.append("where ");
-                } else if in_statement && element_name == "set" {
-                    builder.append("set ");
-                } else if in_statement && element_name == "include" {
-                    parse_helper::search_matched_attr(&attributes, "refid", |attr| {
-                        builder.append("__INCLUDE_ID_");
-                        builder.append(attr.value.as_str());
-                        builder.append("_END__");
-                    });
-                } else if in_statement {
-                    parse_helper::search_matched_attr(&attributes, "prepend", |attr| {
-                        builder.append(attr.value.as_str());
-                    });
-                } else if element_name == "sql" {
-                    in_sql = true;
-                    parse_helper::search_matched_attr(&attributes, "id", |attr| {
-                        include_temp_sqls_ids.insert(attr.value.as_str().to_string(), sql_idx);
-                    });
+    fn read_xml(&self, filename: &String, sql_store: &mut Vec<String>) {
+        sql_store.push("-- ".to_string() + filename);
+        let file = fs::File::open(filename).unwrap();
+        let buf = io::BufReader::new(file);
+        let parser = EventReader::new(buf);
+        let mut in_statement: bool = false;
+        let mut in_sql: bool = false;
+        let mut sql_idx: i32 = 0;
+        let mut builder = StringBuilder::new();
+        let mut include_temp_sqls: HashMap<i32, String> = HashMap::new();
+        let mut include_temp_sqls_ids: HashMap<String, i32> = HashMap::new();
+        for e in parser {
+            match e {
+                Ok(XmlEvent::StartElement {
+                    name, attributes, ..
+                }) => {
+                    let element_name = name.local_name.as_str().to_ascii_lowercase();
+                    if parse_helper::match_statement(&element_name) {
+                        in_statement = true;
+                        parse_helper::search_matched_attr(&attributes, "id", |attr| {
+                            sql_store.push("-- ".to_string() + attr.value.as_str());
+                        });
+                    } else if in_statement && element_name == "where" {
+                        builder.append("where ");
+                    } else if in_statement && element_name == "set" {
+                        builder.append("set ");
+                    } else if in_statement && element_name == "include" {
+                        parse_helper::search_matched_attr(&attributes, "refid", |attr| {
+                            builder.append("__INCLUDE_ID_");
+                            builder.append(attr.value.as_str());
+                            builder.append("_END__");
+                        });
+                    } else if in_statement {
+                        parse_helper::search_matched_attr(&attributes, "prepend", |attr| {
+                            builder.append(attr.value.as_str());
+                        });
+                    } else if element_name == "sql" {
+                        in_sql = true;
+                        parse_helper::search_matched_attr(&attributes, "id", |attr| {
+                            include_temp_sqls_ids.insert(attr.value.as_str().to_string(), sql_idx);
+                        });
+                    }
                 }
-            }
-            Ok(XmlEvent::EndElement { name }) => {
-                let element_name = name.local_name.as_str().to_ascii_lowercase();
-                if parse_helper::match_statement(&element_name) {
-                    let sql = parse_helper::replace_included_sql(
-                        &mut builder,
-                        &include_temp_sqls,
-                        &include_temp_sqls_ids,
-                    );
-                    clear_and_push(&sql, sql_store);
-                    in_statement = false;
-                } else if element_name == "sql" {
-                    include_temp_sqls.insert(sql_idx, builder.to_string());
-                    sql_idx += 1;
-                    builder.clear();
-                    in_sql = false;
+                Ok(XmlEvent::EndElement { name }) => {
+                    let element_name = name.local_name.as_str().to_ascii_lowercase();
+                    if parse_helper::match_statement(&element_name) {
+                        let sql = parse_helper::replace_included_sql(
+                            &mut builder,
+                            &include_temp_sqls,
+                            &include_temp_sqls_ids,
+                        );
+                        clear_and_push(&sql, sql_store);
+                        in_statement = false;
+                    } else if element_name == "sql" {
+                        include_temp_sqls.insert(sql_idx, builder.to_string());
+                        sql_idx += 1;
+                        builder.clear();
+                        in_sql = false;
+                    }
                 }
-            }
-            Ok(XmlEvent::CData(s)) => {
-                if in_statement || in_sql {
-                    builder.append(s);
+                Ok(XmlEvent::CData(s)) => {
+                    if in_statement || in_sql {
+                        builder.append(s);
+                    }
                 }
-            }
-            Ok(XmlEvent::Characters(s)) => {
-                if in_statement || in_sql {
-                    builder.append(s);
+                Ok(XmlEvent::Characters(s)) => {
+                    if in_statement || in_sql {
+                        builder.append(s);
+                    }
                 }
+                Err(e) => {
+                    info!("Error: {}", e);
+                    break;
+                }
+                _ => {}
             }
-            Err(e) => {
-                info!("Error: {}", e);
-                break;
-            }
-            _ => {}
         }
     }
 }

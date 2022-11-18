@@ -35,7 +35,11 @@ pub trait Parser {
         }
     }
 
-    fn read_and_parse(&self, file: &String, sql_store: &mut Vec<String>);
+    fn read_and_parse(&self, file: &String, sql_store: &mut Vec<String>) {
+        self.read_xml(file, sql_store);
+    }
+
+    fn read_xml(&self, file: &String, sql_store: &mut Vec<String>);
 
     fn save(&self, output_dir: &String, sql_store: Vec<String>) {
         info!("write to {:?} sql size: {:?}", output_dir, sql_store.len());
