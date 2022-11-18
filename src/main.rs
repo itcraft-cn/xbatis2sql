@@ -1,18 +1,16 @@
-use std::env;
-use std::fs::File;
-use std::process;
-
-use log::*;
-use simplelog::*;
-
+mod logger;
 mod parser;
 mod scanner;
 
+use log::*;
+use logger::*;
 use parser::*;
 use scanner::*;
+use std::env;
+use std::process;
 
 fn main() {
-    init_logger();
+    log_init::init_logger();
     let args: Vec<String> = env::args().collect();
     let args_len: u8 = args.len() as u8 - 1;
     if args_len == 3 {
@@ -21,23 +19,6 @@ fn main() {
         warn!("just need three arguments, got {} argument(s)", args_len);
         process::exit(-1);
     }
-}
-
-fn init_logger() {
-    CombinedLogger::init(vec![
-        TermLogger::new(
-            LevelFilter::Info,
-            Config::default(),
-            TerminalMode::Mixed,
-            ColorChoice::Auto,
-        ),
-        WriteLogger::new(
-            LevelFilter::Info,
-            Config::default(),
-            File::create("/tmp/tosql.log").unwrap(),
-        ),
-    ])
-    .unwrap();
 }
 
 fn choose_parser(mode: &String, src_dir: &String, output_dir: &String) {
