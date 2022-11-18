@@ -2,9 +2,14 @@ use std::env;
 use std::fs::File;
 use std::process;
 
-use log::info;
-use log::warn;
+use log::*;
 use simplelog::*;
+
+mod parser;
+mod scanner;
+
+use parser::*;
+use scanner::*;
 
 fn main() {
     init_logger();
@@ -49,9 +54,15 @@ fn choose_parser(mode: &String, dir: &String) {
 }
 
 fn parse_ibatis(dir: &String) {
-    info!("{:?}", dir);
+    debug!("{:?}", dir);
+    let mut files: Vec<String> = Vec::new();
+    xml_scanner::scan(&mut files, dir);
+    ibatis_parser::parse(&files);
 }
 
 fn parse_mybatis(dir: &String) {
-    info!("{:?}", dir);
+    debug!("{:?}", dir);
+    let mut files: Vec<String> = Vec::new();
+    xml_scanner::scan(&mut files, dir);
+    mybatis_parser::parse(&files);
 }

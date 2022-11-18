@@ -10,3 +10,4 @@ exclude = ["tests"]
 [dependencies]
 log = "0.4"
 simplelog = "0.10.2"
+walkdir = "2.3.2"
