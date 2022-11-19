@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use std::*;
 use xml::attribute::*;
 
+/// 替换 `include`，用对应的 `sql` 进行合并
 pub fn replace_included_sql(
     builder: &mut StringBuilder,
     include_temp_sqls: &HashMap<i32, String>,
@@ -22,6 +23,7 @@ pub fn replace_included_sql(
     return sql;
 }
 
+/// 检索属性，匹配情况下回调闭包
 pub fn search_matched_attr(
     attributes: &Vec<OwnedAttribute>,
     matched_name: &str,
@@ -35,6 +37,7 @@ pub fn search_matched_attr(
     }
 }
 
+/// 是否匹配语句块
 pub fn match_statement(element_name: &String) -> bool {
     *element_name == "select"
         || *element_name == "insert"

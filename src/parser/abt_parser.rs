@@ -11,17 +11,25 @@ use xml::attribute::*;
 use xml::name::*;
 use xml::reader::*;
 
+/// 回车
 const CRLF: [u8; 1] = [0x0a];
 
+/// 解析过程中数据
 pub struct XmlParsedState {
+    /// 是否在语句中
     pub in_statement: bool,
+    /// 是否在 `sql` 块中
     pub in_sql: bool,
+    /// `sql` 索引
     pub sql_idx: i32,
+    /// `sql` 临时存储，以索引为键，`sql` 为值
     pub include_temp_sqls: HashMap<i32, String>,
+    /// `sql` 临时存储，以 `sql` 的 `id` 为键，索引为值
     pub include_temp_sqls_ids: HashMap<String, i32>,
 }
 
 impl XmlParsedState {
+    /// 构建器，构造工厂
     pub fn new() -> Self {
         return XmlParsedState {
             in_statement: false,
@@ -33,6 +41,7 @@ impl XmlParsedState {
     }
 }
 
+/// 解析器
 pub trait Parser {
     fn parse(&self, output_dir: &String, files: &Vec<String>) {
         let mut sql_store: Vec<String> = Vec::new();

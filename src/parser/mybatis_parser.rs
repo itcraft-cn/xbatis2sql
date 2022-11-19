@@ -6,8 +6,10 @@ use rstring_builder::StringBuilder;
 use xml::attribute::*;
 use xml::name::*;
 
+/// `MyBatis` 实现
 const PARSER: MyBatisParser = MyBatisParser {};
 
+/// 调用 `MyBatis` 实现进行解析
 pub fn parse(output_dir: &String, files: &Vec<String>) {
     PARSER.parse(output_dir, files);
 }

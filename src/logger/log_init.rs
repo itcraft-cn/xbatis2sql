@@ -3,6 +3,7 @@ use simplelog::*;
 use std::env;
 use std::fs::File;
 
+/// 日志初始化，写入 `stdout`，并写入临时文件夹下 `xbatis2sql.log`
 pub fn init_logger() {
     let tmp_dir = env::temp_dir().as_path().to_str().unwrap().to_string();
     let log_file_name = tmp_dir + "/xbatis2sql.log";

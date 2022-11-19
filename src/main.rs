@@ -1,5 +1,10 @@
+//! `xbatis2sql`，通过解析 `iBATIS` 的 `sqlmap` 文件或 `MyBatis` 的 `mapper` 文件，收集散落的 `sql` 语句，输出到 `result.sql` 中
+
+/// 日志处置
 mod logger;
+/// 解析器
 mod parser;
+/// 扫描器
 mod scanner;
 
 use log::*;
@@ -9,6 +14,7 @@ use scanner::*;
 use std::env;
 use std::process;
 
+/// 主函数，解析参数并调用后续函数
 fn main() {
     log_init::init_logger();
     let args: Vec<String> = env::args().collect();
@@ -22,6 +28,7 @@ fn main() {
     }
 }
 
+/// 选择并执行对应的解析器
 fn choose_parser(mode: &String, src_dir: &String, output_dir: &String) {
     let match_ibatis = mode == "ibatis";
     let match_mybatis = mode == "mybatis";
