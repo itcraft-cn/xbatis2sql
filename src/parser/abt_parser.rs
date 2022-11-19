@@ -47,7 +47,7 @@ pub trait Parser {
     fn read_xml(&self, file: &String, sql_store: &mut Vec<String>);
 
     fn save(&self, output_dir: &String, sql_store: Vec<String>) {
-        info!("write to {:?} sql size: {:?}", output_dir, sql_store.len());
+        info!("write to {:?}/resut.sql, size: {:?}", output_dir, sql_store.len());
         let r = File::create(output_dir.to_string() + "/result.sql");
         if r.is_err() {
             warn!("try to write sql to {:?} failed", output_dir);
