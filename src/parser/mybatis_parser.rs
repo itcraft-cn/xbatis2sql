@@ -106,7 +106,7 @@ impl Parser for MyBatisParser {
 
 fn clear_and_push(origin_sql: &String, sql_store: &mut Vec<String>) {
     lazy_static! {
-        static ref RE0: Regex = Regex::new("[\n\t ]+").unwrap();
+        static ref RE0: Regex = Regex::new("[\r\n\t ]+").unwrap();
         static ref RE1: Regex = Regex::new("#\\{[^#{]+\\}").unwrap();
         static ref RE2: Regex = Regex::new("\\$\\{[^${]+\\}").unwrap();
         static ref RE_FIX1: Regex = Regex::new("WHERE[ ]+AND").unwrap();
