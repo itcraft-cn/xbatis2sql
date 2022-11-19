@@ -1,5 +1,5 @@
 use log::*;
-use std::{str::FromStr, *};
+use std::*;
 
 pub fn scan(files: &mut Vec<String>, dir: &String) {
     for d in walkdir::WalkDir::new(dir).into_iter() {
@@ -16,7 +16,7 @@ fn check_if_xml_file(files: &mut Vec<String>, d: Result<walkdir::DirEntry, walkd
         let ext = path::Path::new(entry.file_name()).extension();
         if ext.is_some() && ext.unwrap().eq("xml") {
             debug!("file: {:?}", entry);
-            files.push(String::from_str(entry.path().to_str().unwrap()).unwrap());
+            files.push(entry.path().to_string_lossy().to_string());
         }
     }
 }

@@ -1,0 +1,63 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'xbatis2sql' -- ibatis",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=xbatis2sql",
+                    "--package=xbatis2sql"
+                ],
+                "filter": {
+                    "name": "xbatis2sql",
+                    "kind": "bin"
+                }
+            },
+            "args": ["ibatis", "./test_data", "/tmp"],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'xbatis2sql' -- mybatis",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=xbatis2sql",
+                    "--package=xbatis2sql"
+                ],
+                "filter": {
+                    "name": "xbatis2sql",
+                    "kind": "bin"
+                }
+            },
+            "args": ["mybatis", "./test_data", "/tmp"],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'xbatis2sql'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=xbatis2sql",
+                    "--package=xbatis2sql"
+                ],
+                "filter": {
+                    "name": "xbatis2sql",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}
