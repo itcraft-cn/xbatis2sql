@@ -56,10 +56,6 @@ impl Parser for MyBatisParser {
                             builder.append(attr.value.as_str());
                             builder.append("_END__");
                         });
-                    } else if in_statement {
-                        parse_helper::search_matched_attr(&attributes, "prepend", |attr| {
-                            builder.append(attr.value.as_str());
-                        });
                     } else if element_name == "sql" {
                         in_sql = true;
                         parse_helper::search_matched_attr(&attributes, "id", |attr| {
