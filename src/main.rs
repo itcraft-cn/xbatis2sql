@@ -17,6 +17,7 @@ fn main() {
         choose_parser(&args[1], &args[2], &args[3]);
     } else {
         warn!("just need three arguments, got {} argument(s)", args_len);
+        warn!("USAGE:\txbatis2sql [ibatis|mybatis] src_dir output_dir");
         process::exit(-1);
     }
 }
