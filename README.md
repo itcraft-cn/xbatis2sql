@@ -7,7 +7,9 @@
 ### iBATIS
 
 ```shell
-xbais2sql ibatis /java/use_ibatis_proj/src /tmp
+xbais2sql -i -s /java/use_ibatis_proj/src -o /tmp
+# or
+xbais2sql --mybatis --src /java/use_ibatis_proj/src --output /tmp
 ```
 
 执行后可获得文件： `/tmp/result.sql`
@@ -15,7 +17,9 @@ xbais2sql ibatis /java/use_ibatis_proj/src /tmp
 ### MyBatis
 
 ```shell
-xbais2sql mybatis /java/use_mybatis_proj/src /tmp
+xbais2sql -m -s /java/use_mybatis_proj/src -o /tmp
+# or
+xbais2sql --mybatis --src /java/use_mybatis_proj/src --output /tmp
 ```
 
 执行后可获得文件： `/tmp/result.sql`
