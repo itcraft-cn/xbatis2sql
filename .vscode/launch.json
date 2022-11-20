@@ -19,7 +19,14 @@
                     "kind": "bin"
                 }
             },
-            "args": ["ibatis", "./test_data", "/tmp"],
+            "args": [
+                "--",
+                "-i",
+                "-s",
+                "./test_data",
+                "-o",
+                "/tmp"
+            ],
             "cwd": "${workspaceFolder}"
         },
         {
@@ -37,7 +44,14 @@
                     "kind": "bin"
                 }
             },
-            "args": ["mybatis", "./test_data", "/tmp"],
+            "args": [
+                "--",
+                "-m",
+                "-s",
+                "./test_data",
+                "-o",
+                "/tmp"
+            ],
             "cwd": "${workspaceFolder}"
         },
         {
