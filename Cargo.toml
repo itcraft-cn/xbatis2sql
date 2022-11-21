@@ -4,6 +4,9 @@ version = "0.1.0"
 edition = "2021"
 authors = ["Helly Guo <hellyguo@foxmail.com>"]
 exclude = ["tests", "examples"]
+homepage = "https://github.com/hellyguo/xbatis2sql"
+license = "Apache License Version 2.0"
+readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
