@@ -99,5 +99,8 @@ fn build_opts() -> Options {
 
 /// 打印使用方法
 pub fn print_usage(args: &Args) {
-    print!("{}", args.opts.usage("Usage: xbatis2sql [-i|-m] -s ... -o ..."));
+    print!(
+        "{}",
+        args.opts.usage("Usage: xbatis2sql [-i|-m] -s ... -o ...")
+    );
 }
