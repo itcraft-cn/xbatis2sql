@@ -9,7 +9,7 @@
 ```shell
 xbais2sql -i -s /java/use_ibatis_proj/src -o /tmp
 # or
-xbais2sql --mybatis --src /java/use_ibatis_proj/src --output /tmp
+xbais2sql --ibatis --src /java/use_ibatis_proj/src --output /tmp
 ```
 
 执行后可获得文件： `/tmp/result.sql`
