@@ -10,6 +10,7 @@ readme = "README.md"
 description = "collect sql statements from iBATIS sqlmap files/MyBatis mapper files"
 categories = ["command-line-interface", "command-line-utilities"]
 documentation = "https://docs.rs/crate/xbatis2sql/latest"
+keywords = ["iBATIS", "MyBatis", "SQL"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
