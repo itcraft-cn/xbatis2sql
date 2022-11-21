@@ -1,6 +1,6 @@
 [package]
 name = "xbatis2sql"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["Helly Guo <hellyguo@foxmail.com>"]
 exclude = ["tests", "examples"]
@@ -13,7 +13,7 @@ description = "collect sql statements from iBATIS sqlmap files/MyBatis mapper fi
 
 [dependencies]
 log = "0.4.14"
-simplelog = "0.10.2"
+simplelog = "0.12.0"
 walkdir = "2.3.2"
 regex = "1.5.4"
 lazy_static = "1.4.0"
