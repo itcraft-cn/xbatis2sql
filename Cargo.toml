@@ -1,6 +1,6 @@
 [package]
 name = "xbatis2sql"
-version = "0.2.0"
+version = "0.2.0-dev"
 edition = "2021"
 authors = ["Helly Guo <hellyguo@foxmail.com>"]
 exclude = ["tests", "examples"]
@@ -8,6 +8,8 @@ homepage = "https://github.com/hellyguo/xbatis2sql"
 license = "Apache-2.0"
 readme = "README.md"
 description = "collect sql statements from iBATIS sqlmap files/MyBatis mapper files"
+categories = ["command-line-interface", "command-line-utilities"]
+documentation = "https://docs.rs/crate/xbatis2sql/latest"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
