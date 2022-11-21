@@ -1,6 +1,14 @@
 use getopts::*;
 use std::env;
 
+macro_rules! fail {
+    ($f:tt, $o:tt) => {{
+        eprintln!("Error: {}", $f);
+        eprintln!();
+        return Args::fail($o);
+    }};
+}
+
 pub enum Mode {
     NotSupported,
     IBatis,
@@ -44,8 +52,7 @@ pub fn check_args() -> Args {
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => m,
         Err(f) => {
-            print_fail(f);
-            return Args::fail(opts);
+            fail!(f, opts);
         }
     };
     let help = matches.opt_present("h");
@@ -56,35 +63,19 @@ pub fn check_args() -> Args {
     if help {
         return Args::fail(opts);
     } else if mode_ibatis && mode_mybatis {
-        print_fail_detail(String::from(
-            "just support in iBATIS mode or MyBatis mode, not both",
-        ));
-        return Args::fail(opts);
+        fail!("just support in mode: iBATIS or MyBatis, not both", opts);
     } else if !mode_ibatis && !mode_mybatis {
-        print_fail_detail(String::from("must choose in iBATIS mode or MyBatis mode"));
-        return Args::fail(opts);
+        fail!("must choose in iBATIS mode or MyBatis mode", opts);
     } else if src_dir.is_none() {
-        print_fail_detail(String::from("must define the source directory"));
-        return Args::fail(opts);
+        fail!("must define the source directory", opts);
     } else if output_dir.is_none() {
-        print_fail_detail(String::from("must define the output directory"));
-        return Args::fail(opts);
+        fail!("must define the output directory", opts);
     }
     if mode_ibatis {
         return Args::new(Mode::IBatis, &src_dir.unwrap(), &output_dir.unwrap(), opts);
     } else {
         return Args::new(Mode::MyBatis, &src_dir.unwrap(), &output_dir.unwrap(), opts);
     }
-}
-
-fn print_fail(f: Fail) {
-    eprintln!("Error: {}", f);
-    eprintln!();
-}
-
-fn print_fail_detail(detail: String) {
-    eprintln!("Error: {}", detail);
-    eprintln!();
 }
 
 fn build_opts() -> Options {
