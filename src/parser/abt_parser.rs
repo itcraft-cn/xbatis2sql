@@ -64,12 +64,7 @@ pub trait Parser {
         debug!(">>{:?}", file);
         let result = fs::read_to_string(file);
         if result.is_ok() {
-            let text = result.unwrap();
-            let is_match = re.is_match(text.as_str());
-            if is_match {
-                debug!("{:?}", text);
-            }
-            return is_match;
+            return re.is_match(result.unwrap().as_str());
         } else {
             return false;
         }
@@ -164,9 +159,10 @@ pub trait Parser {
         }
         let mut f = r.unwrap();
         for sql in sql_store {
-            self.write2file(&mut f, sql, output_dir);
-            self.writeln(&mut f, output_dir);
+            self.write2file(&mut f, &sql.as_bytes(), output_dir);
+            self.write2file(&mut f, &CRLF, output_dir);
         }
+        self.write2file(&mut f, &CRLF, output_dir);
         let fr = f.flush();
         if fr.is_err() {
             warn!("try to flush file {:?} failed", f);
@@ -174,18 +170,10 @@ pub trait Parser {
         }
     }
 
-    fn write2file(&self, f: &mut File, sql: String, output_dir: &String) {
-        let wr = f.write(sql.as_bytes());
+    fn write2file(&self, f: &mut File, bdata: &[u8], output_dir: &String) {
+        let wr = f.write(bdata);
         if wr.is_err() {
-            warn!("try to write sql[{:?}] to {:?} failed", sql, output_dir);
-            process::exit(-1);
-        }
-    }
-
-    fn writeln(&self, f: &mut File, output_dir: &String) {
-        let wr = f.write(&CRLF);
-        if wr.is_err() {
-            warn!("try to write crlf to {:?} failed", output_dir);
+            warn!("try to write [{:?}] to {:?} failed", bdata, output_dir);
             process::exit(-1);
         }
     }
