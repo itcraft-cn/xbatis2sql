@@ -6,6 +6,19 @@ use rstring_builder::StringBuilder;
 use xml::attribute::*;
 use xml::name::*;
 
+lazy_static! {
+    static ref RE: Regex = Regex::new("DTD SQL Map 2\\.0").unwrap();
+}
+
+lazy_static! {
+    static ref RE0: Regex = Regex::new("[\r\n\t ]+").unwrap();
+    static ref RE1: Regex = Regex::new("#[^#]+#").unwrap();
+    static ref RE2: Regex = Regex::new("\\$[^$]+\\$").unwrap();
+    static ref RE3: Regex = Regex::new("\\$\\{[^${]+\\}").unwrap();
+    static ref RE_FIX1: Regex = Regex::new("WHERE[ ]+AND").unwrap();
+    static ref RE_FIX2: Regex = Regex::new("WHERE[ ]+OR").unwrap();
+}
+
 /// `iBATIS` 实现
 const PARSER: IBatisParser = IBatisParser {};
 
@@ -18,9 +31,6 @@ struct IBatisParser {}
 
 impl Parser for IBatisParser {
     fn detect_match(&self, file: &String) -> bool {
-        lazy_static! {
-            static ref RE: Regex = Regex::new("DTD SQL Map 2\\.0").unwrap();
-        }
         return self.detect_match_with_regex(file, &RE);
     }
 
@@ -61,14 +71,6 @@ impl Parser for IBatisParser {
     }
 
     fn clear_and_push(&self, origin_sql: &String, sql_store: &mut Vec<String>) {
-        lazy_static! {
-            static ref RE0: Regex = Regex::new("[\r\n\t ]+").unwrap();
-            static ref RE1: Regex = Regex::new("#[^#]+#").unwrap();
-            static ref RE2: Regex = Regex::new("\\$[^$]+\\$").unwrap();
-            static ref RE3: Regex = Regex::new("\\$\\{[^${]+\\}").unwrap();
-            static ref RE_FIX1: Regex = Regex::new("WHERE[ ]+AND").unwrap();
-            static ref RE_FIX2: Regex = Regex::new("WHERE[ ]+OR").unwrap();
-        }
         let mut sql = String::from(origin_sql);
         sql = RE0.replace_all(sql.as_str(), " ").to_string();
         sql = RE1.replace_all(sql.as_str(), ":?").to_string();

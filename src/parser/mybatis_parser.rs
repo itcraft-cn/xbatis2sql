@@ -6,6 +6,16 @@ use rstring_builder::StringBuilder;
 use xml::attribute::*;
 use xml::name::*;
 
+lazy_static! {
+    static ref RE0: Regex = Regex::new("[\r\n\t ]+").unwrap();
+    static ref RE1: Regex = Regex::new("#\\{[^#{]+\\}").unwrap();
+    static ref RE2: Regex = Regex::new("\\$\\{[^${]+\\}").unwrap();
+    static ref RE_FIX1: Regex = Regex::new("WHERE[ ]+AND").unwrap();
+    static ref RE_FIX2: Regex = Regex::new("WHERE[ ]+OR").unwrap();
+    static ref RE_FIX3: Regex = Regex::new(",[ ]+WHERE").unwrap();
+    static ref RE_FIX4: Regex = Regex::new(",$").unwrap();
+}
+
 /// `MyBatis` 实现
 const PARSER: MyBatisParser = MyBatisParser {};
 
@@ -59,15 +69,6 @@ impl Parser for MyBatisParser {
     }
 
     fn clear_and_push(&self, origin_sql: &String, sql_store: &mut Vec<String>) {
-        lazy_static! {
-            static ref RE0: Regex = Regex::new("[\r\n\t ]+").unwrap();
-            static ref RE1: Regex = Regex::new("#\\{[^#{]+\\}").unwrap();
-            static ref RE2: Regex = Regex::new("\\$\\{[^${]+\\}").unwrap();
-            static ref RE_FIX1: Regex = Regex::new("WHERE[ ]+AND").unwrap();
-            static ref RE_FIX2: Regex = Regex::new("WHERE[ ]+OR").unwrap();
-            static ref RE_FIX3: Regex = Regex::new(",[ ]+WHERE").unwrap();
-            static ref RE_FIX4: Regex = Regex::new(",$").unwrap();
-        }
         let mut sql = String::from(origin_sql);
         sql = RE0.replace_all(sql.as_str(), " ").to_string();
         sql = RE1.replace_all(sql.as_str(), ":?").to_string();
