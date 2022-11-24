@@ -12,9 +12,9 @@ lazy_static! {
 
 lazy_static! {
     static ref RE0: Regex = Regex::new("[\r\n\t ]+").unwrap();
-    static ref RE1: Regex = Regex::new("#[^#]+#").unwrap();
-    static ref RE2: Regex = Regex::new("\\$[^$]+\\$").unwrap();
-    static ref RE3: Regex = Regex::new("\\$\\{[^${]+\\}").unwrap();
+    static ref RE1: Regex = Regex::new("\\$\\{[^${]+\\}").unwrap();
+    static ref RE2: Regex = Regex::new("#[^#]+#").unwrap();
+    static ref RE3: Regex = Regex::new("\\$[^$]+\\$").unwrap();
     static ref RE_FIX1: Regex = Regex::new("WHERE[ ]+AND").unwrap();
     static ref RE_FIX2: Regex = Regex::new("WHERE[ ]+OR").unwrap();
 }
@@ -73,11 +73,11 @@ impl Parser for IBatisParser {
     fn clear_and_push(&self, origin_sql: &String, sql_store: &mut Vec<String>) {
         let mut sql = String::from(origin_sql);
         sql = RE0.replace_all(sql.as_str(), " ").to_string();
-        sql = RE1.replace_all(sql.as_str(), ":?").to_string();
-        sql = RE2.replace_all(sql.as_str(), ":?").to_string();
-        sql = RE3
+        sql = RE1
             .replace_all(sql.as_str(), "__REPLACE_SCHEMA__")
             .to_string();
+        sql = RE2.replace_all(sql.as_str(), ":?").to_string();
+        sql = RE3.replace_all(sql.as_str(), ":?").to_string();
         sql = RE_FIX1.replace_all(sql.as_str(), "WHERE").to_string();
         sql = RE_FIX2.replace_all(sql.as_str(), "WHERE").to_string();
         sql_store.push(sql + ";");
