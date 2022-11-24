@@ -15,7 +15,7 @@ Options:
     -m, --mybatis       try to parse MyBatis mapper files
     -s, --src SRC       source directory
     -o, --output OUTPUT output directory
-    -h, --help          print this help menu    
+    -h, --help          print this help menu
 ```
 
 ### iBATIS
