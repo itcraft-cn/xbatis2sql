@@ -7,6 +7,10 @@ use xml::attribute::*;
 use xml::name::*;
 
 lazy_static! {
+    static ref RE: Regex = Regex::new("DTD Mapper 3\\.0").unwrap();
+}
+
+lazy_static! {
     static ref RE0: Regex = Regex::new("[\r\n\t ]+").unwrap();
     static ref RE1: Regex = Regex::new("#\\{[^#{]+\\}").unwrap();
     static ref RE2: Regex = Regex::new("\\$\\{[^${]+\\}").unwrap();
@@ -28,9 +32,6 @@ struct MyBatisParser {}
 
 impl Parser for MyBatisParser {
     fn detect_match(&self, file: &String) -> bool {
-        lazy_static! {
-            static ref RE: Regex = Regex::new("DTD Mapper 3\\.0").unwrap();
-        }
         return self.detect_match_with_regex(file, &RE);
     }
 
