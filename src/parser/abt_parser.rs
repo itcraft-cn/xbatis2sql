@@ -14,18 +14,56 @@ use xml::reader::*;
 /// 回车
 const CRLF: [u8; 1] = [0x0a];
 
+pub enum Mode {
+    Statement,
+    Select,
+    Insert,
+    Update,
+    Delete,
+    SqlPart,
+}
+
+impl Mode {
+    pub fn from(name: &str) -> Self {
+        match name {
+            "statement" => Mode::Statement,
+            "select" => Mode::Select,
+            "insert" => Mode::Insert,
+            "update" => Mode::Update,
+            "delete" => Mode::Delete,
+            "sql" => Mode::SqlPart,
+            _ => panic!("unkown mode"),
+        }
+    }
+}
+
+pub struct SqlStatement {
+    pub mode: Mode,
+    pub id: String,
+    pub sql: String,
+}
+
+impl SqlStatement {
+    pub fn new(mode: Mode, id: String, sql: String) -> Self {
+        return SqlStatement { mode, id, sql };
+    }
+}
+
 /// 解析过程中数据
 pub struct XmlParsedState {
+    /// 过程中变化
     /// 是否在语句中
     pub in_statement: bool,
-    /// 是否在 `sql` 块中
-    pub in_sql: bool,
-    /// `sql` 索引
-    pub sql_idx: i32,
-    /// `sql` 临时存储，以索引为键，`sql` 为值
-    pub include_temp_sqls: HashMap<i32, String>,
-    /// `sql` 临时存储，以 `sql` 的 `id` 为键，索引为值
-    pub include_temp_sqls_ids: HashMap<String, i32>,
+    /// 当前ID
+    pub current_id: String,
+    /// 过程中累计
+    /// 语句集
+    pub statements: Vec<SqlStatement>,
+    /// 语句集
+    pub sql_part_map: HashMap<String, SqlStatement>,
+    /// 过程中不再变化
+    /// 文件名
+    pub filename: String,
 }
 
 impl XmlParsedState {
@@ -33,10 +71,10 @@ impl XmlParsedState {
     pub fn new() -> Self {
         return XmlParsedState {
             in_statement: false,
-            in_sql: false,
-            sql_idx: 0,
-            include_temp_sqls: HashMap::new(),
-            include_temp_sqls_ids: HashMap::new(),
+            current_id: String::from(""),
+            statements: Vec::new(),
+            sql_part_map: HashMap::new(),
+            filename: String::from(""),
         };
     }
 }
@@ -81,23 +119,24 @@ pub trait Parser {
         let parser = EventReader::new(buf);
         let mut builder = StringBuilder::new();
         let mut state = XmlParsedState::new();
+        state.filename = filename.clone();
         for e in parser {
             match e {
                 Ok(XmlEvent::StartElement {
                     name, attributes, ..
                 }) => {
-                    self.parse_start_element(name, attributes, &mut builder, &mut state, sql_store);
+                    self.parse_start_element(name, attributes, &mut builder, &mut state);
                 }
                 Ok(XmlEvent::EndElement { name }) => {
-                    self.parse_end_element(name, &mut builder, &mut state, sql_store);
+                    self.parse_end_element(name, &mut builder, &mut state);
                 }
                 Ok(XmlEvent::CData(s)) => {
-                    if state.in_statement || state.in_sql {
+                    if state.in_statement {
                         builder.append(s);
                     }
                 }
                 Ok(XmlEvent::Characters(s)) => {
-                    if state.in_statement || state.in_sql {
+                    if state.in_statement {
                         builder.append(s);
                     }
                 }
@@ -108,6 +147,8 @@ pub trait Parser {
                 _ => {}
             }
         }
+        info!("{}", state.filename);
+        self.replace_and_fill(sql_store, &state.statements, &state.sql_part_map);
     }
 
     fn parse_start_element(
@@ -116,7 +157,6 @@ pub trait Parser {
         attributes: Vec<OwnedAttribute>,
         builder: &mut StringBuilder,
         state: &mut XmlParsedState,
-        sql_store: &mut Vec<String>,
     );
 
     fn parse_end_element(
@@ -124,26 +164,47 @@ pub trait Parser {
         name: OwnedName,
         builder: &mut StringBuilder,
         state: &mut XmlParsedState,
-        sql_store: &mut Vec<String>,
     ) {
         let element_name = name.local_name.as_str().to_ascii_lowercase();
         if parse_helper::match_statement(&element_name) {
-            let sql = parse_helper::replace_included_sql(
-                builder,
-                &state.include_temp_sqls,
-                &state.include_temp_sqls_ids,
-            );
-            self.clear_and_push(&sql, sql_store);
+            let mode = Mode::from(element_name.as_str());
+            match mode {
+                Mode::SqlPart => {
+                    let sql_stat =
+                        SqlStatement::new(mode, state.current_id.clone(), builder.to_string());
+                    state
+                        .sql_part_map
+                        .insert(state.current_id.clone(), sql_stat);
+                }
+                _ => {
+                    let sql_stat =
+                        SqlStatement::new(mode, state.current_id.clone(), builder.to_string());
+                    state.statements.push(sql_stat);
+                }
+            }
             state.in_statement = false;
-        } else if element_name == "sql" {
-            state
-                .include_temp_sqls
-                .insert(state.sql_idx, builder.to_string());
-            state.sql_idx += 1;
+            state.current_id = String::from("");
             builder.clear();
-            state.in_sql = false;
         }
     }
+
+    fn replace_and_fill(
+        &self,
+        sql_store: &mut Vec<String>,
+        statements: &Vec<SqlStatement>,
+        sql_part_map: &HashMap<String, SqlStatement>,
+    ) {
+        for sql in statements {
+            sql_store.push("--- ".to_string() + &sql.id);
+            let mut sql_stat = sql.sql.clone();
+            for sql_part in sql_part_map {
+                sql_stat =
+                    parse_helper::replace_included_sql(&sql_stat, &sql_part.0, &sql_part.1.sql);
+            }
+            self.clear_and_push(&sql_stat, sql_store);
+        }
+    }
+
     fn clear_and_push(&self, origin_sql: &String, sql_store: &mut Vec<String>);
 
     fn save(&self, output_dir: &String, sql_store: Vec<String>) {

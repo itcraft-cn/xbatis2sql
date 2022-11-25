@@ -11,10 +11,11 @@ lazy_static! {
 }
 
 lazy_static! {
-    static ref RE0: Regex = Regex::new("[\r\n\t ]+").unwrap();
-    static ref RE1: Regex = Regex::new("\\$\\{[^${]+\\}").unwrap();
-    static ref RE2: Regex = Regex::new("#[^#]+#").unwrap();
-    static ref RE3: Regex = Regex::new("\\$[^$]+\\$").unwrap();
+    static ref RE0: Regex = Regex::new("[\t ]?--[^\n]*\n").unwrap();
+    static ref RE1: Regex = Regex::new("[\r\n\t ]+").unwrap();
+    static ref RE2: Regex = Regex::new("\\$\\{[^${]+\\}").unwrap();
+    static ref RE3: Regex = Regex::new("#[^#]+#").unwrap();
+    static ref RE4: Regex = Regex::new("\\$[^$]+\\$").unwrap();
     static ref RE_FIX1: Regex = Regex::new("WHERE[ ]+AND").unwrap();
     static ref RE_FIX2: Regex = Regex::new("WHERE[ ]+OR").unwrap();
 }
@@ -40,44 +41,37 @@ impl Parser for IBatisParser {
         attributes: Vec<OwnedAttribute>,
         builder: &mut StringBuilder,
         state: &mut XmlParsedState,
-        sql_store: &mut Vec<String>,
     ) {
         let element_name = name.local_name.as_str().to_ascii_lowercase();
         if parse_helper::match_statement(&element_name) {
             state.in_statement = true;
             parse_helper::search_matched_attr(&attributes, "id", |attr| {
-                sql_store.push("-- ".to_string() + attr.value.as_str());
+                state.current_id = attr.value.clone();
             });
         } else if element_name == "where" {
-            builder.append("where ");
+            builder.append(" where ");
         } else if element_name == "include" {
             parse_helper::search_matched_attr(&attributes, "refid", |attr| {
-                builder.append("__INCLUDE_ID_");
-                builder.append(attr.value.as_str());
+                builder.append(" __INCLUDE_ID_");
+                builder.append(attr.value.to_ascii_uppercase().as_str());
                 builder.append("_END__");
             });
         } else if state.in_statement {
             parse_helper::search_matched_attr(&attributes, "prepend", |attr| {
-                builder.append(attr.value.as_str());
-            });
-        } else if element_name == "sql" {
-            state.in_sql = true;
-            parse_helper::search_matched_attr(&attributes, "id", |attr| {
-                state
-                    .include_temp_sqls_ids
-                    .insert(attr.value.as_str().to_string(), state.sql_idx);
+                builder.append(" ").append(attr.value.as_str()).append(" ");
             });
         }
     }
 
     fn clear_and_push(&self, origin_sql: &String, sql_store: &mut Vec<String>) {
-        let mut sql = String::from(origin_sql);
+        let mut sql = String::from(origin_sql.to_ascii_uppercase().trim());
         sql = RE0.replace_all(sql.as_str(), " ").to_string();
-        sql = RE1
+        sql = RE1.replace_all(sql.as_str(), " ").to_string();
+        sql = RE2
             .replace_all(sql.as_str(), "__REPLACE_SCHEMA__")
             .to_string();
-        sql = RE2.replace_all(sql.as_str(), ":?").to_string();
         sql = RE3.replace_all(sql.as_str(), ":?").to_string();
+        sql = RE4.replace_all(sql.as_str(), ":?").to_string();
         sql = RE_FIX1.replace_all(sql.as_str(), "WHERE").to_string();
         sql = RE_FIX2.replace_all(sql.as_str(), "WHERE").to_string();
         sql_store.push(sql + ";");
