@@ -11,13 +11,9 @@ pub fn replace_included_sql(
 ) -> String {
     let mut sql = builder.to_string().trim().to_ascii_uppercase();
     for e in include_temp_sqls_ids {
+        let replace_target = "__INCLUDE_ID_".to_string() + e.0.as_str() + "_END__";
         let replaced = &include_temp_sqls.get(e.1).unwrap().to_ascii_uppercase();
-        sql = sql.replace(
-            ("__INCLUDE_ID_".to_string() + e.0.as_str() + "_END__")
-                .to_ascii_uppercase()
-                .as_str(),
-            replaced,
-        );
+        sql = sql.replace((replace_target).to_ascii_uppercase().as_str(), replaced);
     }
     builder.clear();
     return sql;
