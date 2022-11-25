@@ -48,9 +48,9 @@ impl Parser for IBatisParser {
             parse_helper::search_matched_attr(&attributes, "id", |attr| {
                 sql_store.push("-- ".to_string() + attr.value.as_str());
             });
-        } else if state.in_statement && element_name == "where" {
+        } else if element_name == "where" {
             builder.append("where ");
-        } else if state.in_statement && element_name == "include" {
+        } else if element_name == "include" {
             parse_helper::search_matched_attr(&attributes, "refid", |attr| {
                 builder.append("__INCLUDE_ID_");
                 builder.append(attr.value.as_str());
