@@ -49,16 +49,16 @@ impl Parser for IBatisParser {
                 sql_store.push("-- ".to_string() + attr.value.as_str());
             });
         } else if element_name == "where" {
-            builder.append("where ");
+            builder.append(" where ");
         } else if element_name == "include" {
             parse_helper::search_matched_attr(&attributes, "refid", |attr| {
-                builder.append("__INCLUDE_ID_");
+                builder.append(" __INCLUDE_ID_");
                 builder.append(attr.value.as_str());
                 builder.append("_END__");
             });
         } else if state.in_statement {
             parse_helper::search_matched_attr(&attributes, "prepend", |attr| {
-                builder.append(attr.value.as_str());
+                builder.append(" ").append(attr.value.as_str()).append(" ");
             });
         } else if element_name == "sql" {
             state.in_sql = true;
