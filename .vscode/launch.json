@@ -57,6 +57,46 @@
         {
             "type": "lldb",
             "request": "launch",
+            "name": "Debug executable 'xbatis2sql' -v",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=xbatis2sql",
+                    "--package=xbatis2sql"
+                ],
+                "filter": {
+                    "name": "xbatis2sql",
+                    "kind": "bin"
+                }
+            },
+            "args": [
+                "--",
+                "-v"
+            ],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'xbatis2sql'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=xbatis2sql",
+                    "--package=xbatis2sql"
+                ],
+                "filter": {
+                    "name": "xbatis2sql",
+                    "kind": "bin"
+                }
+            },
+            "args": [
+            ],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
             "name": "Debug unit tests in executable 'xbatis2sql'",
             "cargo": {
                 "args": [

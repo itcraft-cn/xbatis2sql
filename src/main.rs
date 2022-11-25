@@ -19,7 +19,7 @@ use scanner::*;
 /// 主函数，解析参数并调用后续函数
 fn main() {
     let args = parse_args::check_args();
-    if args.fast_fail {
+    if args.fast_fail || args.show_version {
         parse_args::print_usage(&args);
     } else {
         choose_parser(args.mode, &args.src_dir, &args.output_dir);
