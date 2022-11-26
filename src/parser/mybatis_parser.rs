@@ -14,7 +14,7 @@ lazy_static! {
 }
 
 /// `MyBatis` 实现
-const PARSER: MyBatisParser = MyBatisParser {};
+pub const PARSER: MyBatisParser = MyBatisParser {};
 
 fn create_replcements() -> Vec<RegexReplacement> {
     return vec![
@@ -53,12 +53,7 @@ fn create_replcements() -> Vec<RegexReplacement> {
     ];
 }
 
-/// 调用 `MyBatis` 实现进行解析
-pub fn parse(output_dir: &String, files: &Vec<String>) {
-    PARSER.parse(output_dir, files);
-}
-
-struct MyBatisParser {}
+pub struct MyBatisParser {}
 
 impl Parser for MyBatisParser {
     fn detect_match(&self, file: &String) -> bool {

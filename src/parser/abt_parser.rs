@@ -3,25 +3,19 @@ use super::parse_helper::*;
 use log::*;
 use regex::Regex;
 use std::collections::HashMap;
-use std::fs::File;
-use std::io::Write;
-use std::process;
 use std::*;
 use xml::attribute::*;
 use xml::name::*;
 use xml::reader::*;
 
-/// 回车
-const CRLF: [u8; 1] = [0x0a];
-
 /// 解析器
 pub trait Parser {
-    fn parse(&self, output_dir: &String, files: &Vec<String>) {
+    fn parse(&self, files: &Vec<String>) -> Vec<String> {
         let mut sql_store: Vec<String> = Vec::new();
         for file in files {
             self.check_and_parse(file, &mut sql_store);
         }
-        self.save(output_dir, sql_store);
+        return sql_store;
     }
 
     fn check_and_parse(&self, file: &String, sql_store: &mut Vec<String>) {
@@ -224,37 +218,5 @@ pub trait Parser {
             .regex
             .replace_all(origin_sql, regex_replacement.target.as_str())
             .to_string();
-    }
-
-    fn save(&self, output_dir: &String, sql_store: Vec<String>) {
-        info!(
-            "write to {:?}/resut.sql, size: {:?}",
-            output_dir,
-            sql_store.len()
-        );
-        let r = File::create(output_dir.to_string() + "/result.sql");
-        if r.is_err() {
-            warn!("try to write sql to {:?} failed", output_dir);
-            process::exit(-1);
-        }
-        let mut f = r.unwrap();
-        for sql in sql_store {
-            self.write2file(&mut f, &sql.as_bytes(), output_dir);
-            self.write2file(&mut f, &CRLF, output_dir);
-        }
-        self.write2file(&mut f, &CRLF, output_dir);
-        let fr = f.flush();
-        if fr.is_err() {
-            warn!("try to flush file {:?} failed", f);
-            process::exit(-1);
-        }
-    }
-
-    fn write2file(&self, f: &mut File, bdata: &[u8], output_dir: &String) {
-        let wr = f.write(bdata);
-        if wr.is_err() {
-            warn!("try to write [{:?}] to {:?} failed", bdata, output_dir);
-            process::exit(-1);
-        }
     }
 }

@@ -15,7 +15,7 @@ lazy_static! {
 }
 
 /// `iBATIS` 实现
-const PARSER: IBatisParser = IBatisParser {};
+pub const PARSER: IBatisParser = IBatisParser {};
 
 fn create_replcements() -> Vec<RegexReplacement> {
     return vec![
@@ -58,12 +58,7 @@ fn create_replcements() -> Vec<RegexReplacement> {
     ];
 }
 
-/// 调用 `iBATIS` 实现进行解析
-pub fn parse(output_dir: &String, files: &Vec<String>) {
-    PARSER.parse(output_dir, files);
-}
-
-struct IBatisParser {}
+pub struct IBatisParser {}
 
 impl Parser for IBatisParser {
     fn detect_match(&self, file: &String) -> bool {
