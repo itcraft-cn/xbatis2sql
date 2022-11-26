@@ -15,8 +15,10 @@ lazy_static! {
     static ref RE2: Regex = Regex::new("\\$\\{[^${]+\\}").unwrap();
     static ref RE3: Regex = Regex::new("#[^#]+#").unwrap();
     static ref RE4: Regex = Regex::new("\\$[^$]+\\$").unwrap();
-    static ref RE_FIX1: Regex = Regex::new("WHERE[ ]+AND").unwrap();
-    static ref RE_FIX2: Regex = Regex::new("WHERE[ ]+OR").unwrap();
+    static ref RE_FIX1: Regex = Regex::new("WHERE[ ]+AND[ ]+").unwrap();
+    static ref RE_FIX2: Regex = Regex::new("WHERE[ ]+OR[ ]+").unwrap();
+    static ref RE_FIX3: Regex = Regex::new(",[ ]+WHERE").unwrap();
+    static ref RE_FIX4: Regex = Regex::new(",$").unwrap();
 }
 
 /// `iBATIS` 实现
@@ -81,8 +83,10 @@ impl Parser for IBatisParser {
             .to_string();
         sql = RE3.replace_all(sql.as_str(), ":?").to_string();
         sql = RE4.replace_all(sql.as_str(), ":?").to_string();
-        sql = RE_FIX1.replace_all(sql.as_str(), "WHERE").to_string();
-        sql = RE_FIX2.replace_all(sql.as_str(), "WHERE").to_string();
+        sql = RE_FIX1.replace_all(sql.as_str(), "WHERE ").to_string();
+        sql = RE_FIX2.replace_all(sql.as_str(), "WHERE ").to_string();
+        sql = RE_FIX3.replace_all(sql.as_str(), " WHERE").to_string();
+        sql = RE_FIX4.replace_all(sql.as_str(), "").to_string();
         sql_store.push(sql + ";");
     }
 }

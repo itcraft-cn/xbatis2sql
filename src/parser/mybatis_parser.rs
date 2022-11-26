@@ -14,8 +14,8 @@ lazy_static! {
     static ref RE1: Regex = Regex::new("[\r\n\t ]+").unwrap();
     static ref RE2: Regex = Regex::new("#\\{[^#{]+\\}").unwrap();
     static ref RE3: Regex = Regex::new("\\$\\{[^${]+\\}").unwrap();
-    static ref RE_FIX1: Regex = Regex::new("WHERE[ ]+AND").unwrap();
-    static ref RE_FIX2: Regex = Regex::new("WHERE[ ]+OR").unwrap();
+    static ref RE_FIX1: Regex = Regex::new("WHERE[ ]+AND[ ]+").unwrap();
+    static ref RE_FIX2: Regex = Regex::new("WHERE[ ]+OR[ ]+").unwrap();
     static ref RE_FIX3: Regex = Regex::new(",[ ]+WHERE").unwrap();
     static ref RE_FIX4: Regex = Regex::new(",$").unwrap();
 }
@@ -73,8 +73,8 @@ impl Parser for MyBatisParser {
         sql = RE1.replace_all(sql.as_str(), " ").to_string();
         sql = RE2.replace_all(sql.as_str(), ":?").to_string();
         sql = RE3.replace_all(sql.as_str(), ":?").to_string();
-        sql = RE_FIX1.replace_all(sql.as_str(), "WHERE").to_string();
-        sql = RE_FIX2.replace_all(sql.as_str(), "WHERE").to_string();
+        sql = RE_FIX1.replace_all(sql.as_str(), "WHERE ").to_string();
+        sql = RE_FIX2.replace_all(sql.as_str(), "WHERE ").to_string();
         sql = RE_FIX3.replace_all(sql.as_str(), " WHERE").to_string();
         sql = RE_FIX4.replace_all(sql.as_str(), "").to_string();
         sql_store.push(sql + ";");
