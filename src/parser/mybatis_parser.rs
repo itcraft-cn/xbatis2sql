@@ -41,8 +41,6 @@ impl Parser for MyBatisParser {
         attributes: Vec<OwnedAttribute>,
         state: &mut XmlParsedState,
     ) {
-        state.has_include = false;
-        state.include_keys = Vec::new();
         let element_name = name.local_name.as_str().to_ascii_lowercase();
         if parse_helper::match_statement(&element_name) {
             state.in_statement = true;
@@ -60,12 +58,11 @@ impl Parser for MyBatisParser {
         } else if element_name == "include" {
             parse_helper::search_matched_attr(&attributes, "refid", |attr| {
                 state.sql_builder.append(" __INCLUDE_ID_");
-                state
-                    .sql_builder
-                    .append(attr.value.to_ascii_uppercase().as_str());
+                let refid = attr.value.clone();
+                state.sql_builder.append(refid.as_str());
                 state.sql_builder.append("_END__");
                 state.has_include = true;
-                state.include_keys.push(attr.value.clone());
+                state.include_keys.push(refid);
             });
         }
     }

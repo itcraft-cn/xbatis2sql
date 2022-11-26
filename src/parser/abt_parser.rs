@@ -46,6 +46,15 @@ pub struct SqlKey {
     pub key_sql: String,
 }
 
+impl SqlKey {
+    pub fn empty() -> SqlKey {
+        return SqlKey {
+            key_name: String::from(""),
+            key_sql: String::from(""),
+        };
+    }
+}
+
 pub struct SqlStatement {
     pub mode: Mode,
     pub id: String,
@@ -233,13 +242,10 @@ pub trait Parser {
                         mode,
                         state.current_id.clone(),
                         state.sql_builder.to_string(),
-                        state.has_include,
-                        state.include_keys.clone(),
                         false,
-                        SqlKey {
-                            key_name: String::from(""),
-                            key_sql: String::from(""),
-                        },
+                        Vec::new(),
+                        false,
+                        SqlKey::empty(),
                     );
                     state
                         .sql_part_map
