@@ -134,8 +134,8 @@ pub trait Parser {
             state.include_keys.clone(),
             state.has_sql_key,
             SqlKey {
-                key_name: state.current_key_id.clone(),
-                key_sql: state.key_sql_builder.to_string(),
+                key: state.current_key_id.clone(),
+                sql: state.key_sql_builder.to_string(),
             },
         );
         state.statements.push(sql_stat);
@@ -148,21 +148,21 @@ pub trait Parser {
         statements: &Vec<SqlStatement>,
         sql_part_map: &HashMap<String, SqlStatement>,
     ) {
-        for sql in statements {
-            sql_store.push("--- ".to_string() + &sql.id);
-            if sql.has_include {
-                let mut sql_stat = sql.sql.clone();
-                for key in &sql.include_keys {
+        for stat in statements {
+            sql_store.push("--- ".to_string() + &stat.id);
+            if stat.has_include {
+                let mut sql = stat.sql.clone();
+                for key in &stat.include_keys {
                     let sql_part = sql_part_map.get_key_value(key).unwrap();
-                    sql_stat = replace_included_sql(&sql_stat, &sql_part.0, &sql_part.1.sql);
+                    sql = replace_included_sql(&sql, &sql_part.0, &sql_part.1.sql);
                 }
-                self.clear_and_push(&sql_stat, sql_store);
+                self.clear_and_push(&sql, sql_store);
             } else {
-                self.clear_and_push(&sql.sql, sql_store);
+                self.clear_and_push(&stat.sql, sql_store);
             }
-            if sql.has_sql_key {
-                sql_store.push("--- ".to_string() + &sql.sql_key.key_name);
-                self.clear_and_push(&sql.sql_key.key_sql, sql_store);
+            if stat.has_sql_key {
+                sql_store.push("--- ".to_string() + &stat.sql_key.key);
+                self.clear_and_push(&stat.sql_key.sql, sql_store);
             }
         }
     }

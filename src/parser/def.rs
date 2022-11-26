@@ -29,16 +29,16 @@ impl Mode {
 
 pub struct SqlKey {
     /// 键名
-    pub key_name: String,
+    pub key: String,
     /// 键语句
-    pub key_sql: String,
+    pub sql: String,
 }
 
 impl SqlKey {
     pub fn empty() -> SqlKey {
         return SqlKey {
-            key_name: String::from(""),
-            key_sql: String::from(""),
+            key: String::from(""),
+            sql: String::from(""),
         };
     }
 }
