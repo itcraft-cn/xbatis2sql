@@ -6,3 +6,5 @@ pub mod ibatis_parser;
 pub mod mybatis_parser;
 /// 供解析器使用的工具方法
 mod parse_helper;
+/// 供解析器使用的内部定义
+mod def;

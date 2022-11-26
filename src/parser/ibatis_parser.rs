@@ -1,5 +1,6 @@
 use super::abt_parser::*;
-use super::parse_helper;
+use super::def::*;
+use super::parse_helper::*;
 use lazy_static::*;
 use regex::Regex;
 use xml::attribute::*;
@@ -43,9 +44,9 @@ impl Parser for IBatisParser {
         state: &mut XmlParsedState,
     ) {
         let element_name = name.local_name.as_str().to_ascii_lowercase();
-        if parse_helper::match_statement(&element_name) {
+        if match_statement(&element_name) {
             state.in_statement = true;
-            parse_helper::search_matched_attr(&attributes, "id", |attr| {
+            search_matched_attr(&attributes, "id", |attr| {
                 state.current_id = attr.value.clone();
             });
         } else if element_name == "selectkey" {
@@ -55,7 +56,7 @@ impl Parser for IBatisParser {
         } else if element_name == "where" {
             state.sql_builder.append(" where ");
         } else if element_name == "include" {
-            parse_helper::search_matched_attr(&attributes, "refid", |attr| {
+            search_matched_attr(&attributes, "refid", |attr| {
                 state.sql_builder.append(" __INCLUDE_ID_");
                 let refid = attr.value.clone();
                 state.sql_builder.append(refid.as_str());
@@ -64,7 +65,7 @@ impl Parser for IBatisParser {
                 state.include_keys.push(refid);
             });
         } else if state.in_statement {
-            parse_helper::search_matched_attr(&attributes, "prepend", |attr| {
+            search_matched_attr(&attributes, "prepend", |attr| {
                 state
                     .sql_builder
                     .append(" ")

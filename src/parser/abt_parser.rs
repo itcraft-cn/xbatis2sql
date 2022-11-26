@@ -1,7 +1,7 @@
-use super::parse_helper;
+use super::def::*;
+use super::parse_helper::*;
 use log::*;
 use regex::Regex;
-use rstring_builder::StringBuilder;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
@@ -13,141 +13,6 @@ use xml::reader::*;
 
 /// 回车
 const CRLF: [u8; 1] = [0x0a];
-
-pub enum Mode {
-    Statement,
-    Select,
-    Insert,
-    Update,
-    Delete,
-    SelectKey,
-    SqlPart,
-}
-
-impl Mode {
-    pub fn from(name: &str) -> Self {
-        match name {
-            "statement" => Mode::Statement,
-            "select" => Mode::Select,
-            "insert" => Mode::Insert,
-            "update" => Mode::Update,
-            "delete" => Mode::Delete,
-            "selectkey" => Mode::SelectKey,
-            "sql" => Mode::SqlPart,
-            _ => panic!("unkown mode"),
-        }
-    }
-}
-
-pub struct SqlKey {
-    /// 键名
-    pub key_name: String,
-    /// 键语句
-    pub key_sql: String,
-}
-
-impl SqlKey {
-    pub fn empty() -> SqlKey {
-        return SqlKey {
-            key_name: String::from(""),
-            key_sql: String::from(""),
-        };
-    }
-}
-
-pub struct SqlStatement {
-    pub mode: Mode,
-    pub id: String,
-    pub sql: String,
-    pub has_include: bool,
-    pub include_keys: Vec<String>,
-    pub has_sql_key: bool,
-    pub sql_key: SqlKey,
-}
-
-impl SqlStatement {
-    pub fn new(
-        mode: Mode,
-        id: String,
-        sql: String,
-        has_include: bool,
-        include_keys: Vec<String>,
-        has_sql_key: bool,
-        sql_key: SqlKey,
-    ) -> Self {
-        return SqlStatement {
-            mode,
-            id,
-            sql,
-            has_include,
-            include_keys,
-            has_sql_key,
-            sql_key,
-        };
-    }
-}
-
-/// 解析过程中数据
-pub struct XmlParsedState {
-    /// 过程中变化
-    /// 是否在语句中
-    pub in_statement: bool,
-    /// 是否在语句中
-    pub in_sql_key: bool,
-    /// 是否有子句
-    pub has_include: bool,
-    /// 是否有取键语句
-    pub has_sql_key: bool,
-    /// 当前ID
-    pub current_id: String,
-    /// 取键语句ID
-    pub current_key_id: String,
-    /// 子集key
-    pub include_keys: Vec<String>,
-    /// 过程中累计
-    /// 主连接器
-    pub sql_builder: StringBuilder,
-    /// 取键语句连接器
-    pub key_sql_builder: StringBuilder,
-    /// 语句集
-    pub statements: Vec<SqlStatement>,
-    /// 语句集
-    pub sql_part_map: HashMap<String, SqlStatement>,
-    /// 过程中不再变化
-    /// 文件名
-    pub filename: String,
-}
-
-impl XmlParsedState {
-    /// 构建器，构造工厂
-    pub fn new() -> Self {
-        return XmlParsedState {
-            in_statement: false,
-            in_sql_key: false,
-            has_include: false,
-            has_sql_key: false,
-            sql_builder: StringBuilder::new(),
-            key_sql_builder: StringBuilder::new(),
-            current_id: String::from(""),
-            current_key_id: String::from(""),
-            include_keys: Vec::new(),
-            statements: Vec::new(),
-            sql_part_map: HashMap::new(),
-            filename: String::from(""),
-        };
-    }
-
-    pub fn reset(&mut self) {
-        self.in_statement = false;
-        self.in_sql_key = false;
-        self.has_include = false;
-        self.has_sql_key = false;
-        self.current_id = String::from("");
-        self.current_key_id = String::from("");
-        self.sql_builder.clear();
-        self.key_sql_builder.clear();
-    }
-}
 
 /// 解析器
 pub trait Parser {
@@ -234,44 +99,48 @@ pub trait Parser {
 
     fn parse_end_element(&self, name: OwnedName, state: &mut XmlParsedState) {
         let element_name = name.local_name.as_str().to_ascii_lowercase();
-        if parse_helper::match_statement(&element_name) {
+        if match_statement(&element_name) {
             let mode = Mode::from(element_name.as_str());
             match mode {
-                Mode::SqlPart => {
-                    let sql_stat = SqlStatement::new(
-                        mode,
-                        state.current_id.clone(),
-                        state.sql_builder.to_string(),
-                        false,
-                        Vec::new(),
-                        false,
-                        SqlKey::empty(),
-                    );
-                    state
-                        .sql_part_map
-                        .insert(state.current_id.clone(), sql_stat);
-                    state.reset();
-                }
-                _ => {
-                    let sql_stat = SqlStatement::new(
-                        mode,
-                        state.current_id.clone(),
-                        state.sql_builder.to_string(),
-                        state.has_include,
-                        state.include_keys.clone(),
-                        state.has_sql_key,
-                        SqlKey {
-                            key_name: state.current_key_id.clone(),
-                            key_sql: state.key_sql_builder.to_string(),
-                        },
-                    );
-                    state.statements.push(sql_stat);
-                    state.reset();
-                }
+                Mode::SqlPart => self.handle_end_sql_part(mode, state),
+                _ => self.handle_end_statement(mode, state),
             }
         } else if element_name == "selectkey" {
             state.in_sql_key = false;
         }
+    }
+
+    fn handle_end_sql_part(&self, mode: Mode, state: &mut XmlParsedState) {
+        let sql_stat = SqlStatement::new(
+            mode,
+            state.current_id.clone(),
+            state.sql_builder.to_string(),
+            false,
+            Vec::new(),
+            false,
+            SqlKey::empty(),
+        );
+        state
+            .sql_part_map
+            .insert(state.current_id.clone(), sql_stat);
+        state.reset();
+    }
+
+    fn handle_end_statement(&self, mode: Mode, state: &mut XmlParsedState) {
+        let sql_stat = SqlStatement::new(
+            mode,
+            state.current_id.clone(),
+            state.sql_builder.to_string(),
+            state.has_include,
+            state.include_keys.clone(),
+            state.has_sql_key,
+            SqlKey {
+                key_name: state.current_key_id.clone(),
+                key_sql: state.key_sql_builder.to_string(),
+            },
+        );
+        state.statements.push(sql_stat);
+        state.reset();
     }
 
     fn replace_and_fill(
@@ -286,8 +155,7 @@ pub trait Parser {
                 let mut sql_stat = sql.sql.clone();
                 for key in &sql.include_keys {
                     let sql_part = sql_part_map.get_key_value(key).unwrap();
-                    sql_stat =
-                        parse_helper::replace_included_sql(&sql_stat, &sql_part.0, &sql_part.1.sql);
+                    sql_stat = replace_included_sql(&sql_stat, &sql_part.0, &sql_part.1.sql);
                 }
                 self.clear_and_push(&sql_stat, sql_store);
             } else {
