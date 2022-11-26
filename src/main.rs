@@ -6,6 +6,8 @@ mod args;
 mod logger;
 /// 解析器
 mod parser;
+/// 保存
+mod saver;
 /// 扫描器
 mod scanner;
 
@@ -35,12 +37,18 @@ fn choose_parser(mode: parse_args::Mode, src_dir: &String, output_dir: &String) 
     );
     let mut files: Vec<String> = Vec::new();
     xml_scanner::scan(&mut files, src_dir);
+    let parser = fetch_parser(mode);
+    let sql_store = parser.parse(&files);
+    saver::save::save(output_dir, sql_store);
+}
+
+fn fetch_parser(mode: Mode) -> Box<dyn abt_parser::Parser> {
     match mode {
         Mode::IBatis => {
-            ibatis_parser::parse(output_dir, &files);
+            return Box::new(ibatis_parser::PARSER);
         }
         Mode::MyBatis => {
-            mybatis_parser::parse(output_dir, &files);
+            return Box::new(mybatis_parser::PARSER);
         }
         _ => {
             panic!("not supported mode");

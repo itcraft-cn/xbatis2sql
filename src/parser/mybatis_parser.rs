@@ -1,8 +1,7 @@
 use super::abt_parser::*;
-use super::parse_helper;
+use super::def::*;
 use lazy_static::*;
 use regex::Regex;
-use rstring_builder::StringBuilder;
 use xml::attribute::*;
 use xml::name::*;
 
@@ -11,67 +10,69 @@ lazy_static! {
 }
 
 lazy_static! {
-    static ref RE0: Regex = Regex::new("[\t ]?--[^\n]*\n").unwrap();
-    static ref RE1: Regex = Regex::new("[\r\n\t ]+").unwrap();
-    static ref RE2: Regex = Regex::new("#\\{[^#{]+\\}").unwrap();
-    static ref RE3: Regex = Regex::new("\\$\\{[^${]+\\}").unwrap();
-    static ref RE_FIX1: Regex = Regex::new("WHERE[ ]+AND").unwrap();
-    static ref RE_FIX2: Regex = Regex::new("WHERE[ ]+OR").unwrap();
-    static ref RE_FIX3: Regex = Regex::new(",[ ]+WHERE").unwrap();
-    static ref RE_FIX4: Regex = Regex::new(",$").unwrap();
+    static ref RE_VEC: Vec<RegexReplacement> = create_replcements();
 }
 
 /// `MyBatis` 实现
-const PARSER: MyBatisParser = MyBatisParser {};
+pub const PARSER: MyBatisParser = MyBatisParser {};
 
-/// 调用 `MyBatis` 实现进行解析
-pub fn parse(output_dir: &String, files: &Vec<String>) {
-    PARSER.parse(output_dir, files);
+fn create_replcements() -> Vec<RegexReplacement> {
+    return vec![
+        RegexReplacement {
+            regex: Regex::new("[\t ]?--[^\n]*\n").unwrap(),
+            target: String::from(""),
+        },
+        RegexReplacement {
+            regex: Regex::new("[\r\n\t ]+").unwrap(),
+            target: String::from(" "),
+        },
+        RegexReplacement {
+            regex: Regex::new("#\\{[^#{]+\\}").unwrap(),
+            target: String::from(":?"),
+        },
+        RegexReplacement {
+            regex: Regex::new("\\$\\{[^${]+\\}").unwrap(),
+            target: String::from(":?"),
+        },
+        RegexReplacement {
+            regex: Regex::new("WHERE[ ]+AND[ ]+").unwrap(),
+            target: String::from("WHERE "),
+        },
+        RegexReplacement {
+            regex: Regex::new("WHERE[ ]+OR[ ]+").unwrap(),
+            target: String::from("WHERE "),
+        },
+        RegexReplacement {
+            regex: Regex::new(",[ ]+WHERE").unwrap(),
+            target: String::from(" WHERE"),
+        },
+        RegexReplacement {
+            regex: Regex::new(",$").unwrap(),
+            target: String::from(""),
+        },
+    ];
 }
 
-struct MyBatisParser {}
+pub struct MyBatisParser {}
 
 impl Parser for MyBatisParser {
     fn detect_match(&self, file: &String) -> bool {
         return self.detect_match_with_regex(file, &RE);
     }
 
-    fn parse_start_element(
+    fn ex_parse_start_element(
         &self,
-        name: OwnedName,
-        attributes: Vec<OwnedAttribute>,
-        builder: &mut StringBuilder,
+        _name: OwnedName,
+        element_name: &String,
+        _attributes: Vec<OwnedAttribute>,
         state: &mut XmlParsedState,
     ) {
-        let element_name = name.local_name.as_str().to_ascii_lowercase();
-        if parse_helper::match_statement(&element_name) {
-            state.in_statement = true;
-            parse_helper::search_matched_attr(&attributes, "id", |attr| {
-                state.current_id = attr.value.clone();
-            });
-        } else if element_name == "where" {
-            builder.append(" where ");
-        } else if element_name == "set" {
-            builder.append(" set ");
-        } else if element_name == "include" {
-            parse_helper::search_matched_attr(&attributes, "refid", |attr| {
-                builder.append(" __INCLUDE_ID_");
-                builder.append(attr.value.to_ascii_uppercase().as_str());
-                builder.append("_END__");
-            });
+        if element_name == "set" {
+            state.sql_builder.append(" set ");
         }
     }
 
-    fn clear_and_push(&self, origin_sql: &String, sql_store: &mut Vec<String>) {
-        let mut sql = String::from(origin_sql.to_ascii_uppercase().trim());
-        sql = RE0.replace_all(sql.as_str(), "").to_string();
-        sql = RE1.replace_all(sql.as_str(), " ").to_string();
-        sql = RE2.replace_all(sql.as_str(), ":?").to_string();
-        sql = RE3.replace_all(sql.as_str(), ":?").to_string();
-        sql = RE_FIX1.replace_all(sql.as_str(), "WHERE").to_string();
-        sql = RE_FIX2.replace_all(sql.as_str(), "WHERE").to_string();
-        sql = RE_FIX3.replace_all(sql.as_str(), " WHERE").to_string();
-        sql = RE_FIX4.replace_all(sql.as_str(), "").to_string();
-        sql_store.push(sql + ";");
+    fn clear_and_push(&self, sql_store: &mut Vec<String>, origin_sql: &String) {
+        self.loop_clear_and_push(sql_store, &RE_VEC, origin_sql)
     }
 }
