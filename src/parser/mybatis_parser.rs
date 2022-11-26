@@ -2,7 +2,6 @@ use super::abt_parser::*;
 use super::parse_helper;
 use lazy_static::*;
 use regex::Regex;
-use rstring_builder::StringBuilder;
 use xml::attribute::*;
 use xml::name::*;
 
@@ -40,7 +39,6 @@ impl Parser for MyBatisParser {
         &self,
         name: OwnedName,
         attributes: Vec<OwnedAttribute>,
-        builder: &mut StringBuilder,
         state: &mut XmlParsedState,
     ) {
         state.has_include = false;
@@ -51,15 +49,21 @@ impl Parser for MyBatisParser {
             parse_helper::search_matched_attr(&attributes, "id", |attr| {
                 state.current_id = attr.value.clone();
             });
+        } else if element_name == "selectkey" {
+            state.in_sql_key = true;
+            state.has_sql_key = true;
+            state.current_key_id = state.current_id.as_str().to_string() + ".selectKey";
         } else if element_name == "where" {
-            builder.append(" where ");
+            state.sql_builder.append(" where ");
         } else if element_name == "set" {
-            builder.append(" set ");
+            state.sql_builder.append(" set ");
         } else if element_name == "include" {
             parse_helper::search_matched_attr(&attributes, "refid", |attr| {
-                builder.append(" __INCLUDE_ID_");
-                builder.append(attr.value.to_ascii_uppercase().as_str());
-                builder.append("_END__");
+                state.sql_builder.append(" __INCLUDE_ID_");
+                state
+                    .sql_builder
+                    .append(attr.value.to_ascii_uppercase().as_str());
+                state.sql_builder.append("_END__");
                 state.has_include = true;
                 state.include_keys.push(attr.value.clone());
             });

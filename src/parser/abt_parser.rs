@@ -20,6 +20,7 @@ pub enum Mode {
     Insert,
     Update,
     Delete,
+    SelectKey,
     SqlPart,
 }
 
@@ -31,10 +32,18 @@ impl Mode {
             "insert" => Mode::Insert,
             "update" => Mode::Update,
             "delete" => Mode::Delete,
+            "selectkey" => Mode::SelectKey,
             "sql" => Mode::SqlPart,
             _ => panic!("unkown mode"),
         }
     }
+}
+
+pub struct SqlKey {
+    /// 键名
+    pub key_name: String,
+    /// 键语句
+    pub key_sql: String,
 }
 
 pub struct SqlStatement {
@@ -43,6 +52,8 @@ pub struct SqlStatement {
     pub sql: String,
     pub has_include: bool,
     pub include_keys: Vec<String>,
+    pub has_sql_key: bool,
+    pub sql_key: SqlKey,
 }
 
 impl SqlStatement {
@@ -52,6 +63,8 @@ impl SqlStatement {
         sql: String,
         has_include: bool,
         include_keys: Vec<String>,
+        has_sql_key: bool,
+        sql_key: SqlKey,
     ) -> Self {
         return SqlStatement {
             mode,
@@ -59,6 +72,8 @@ impl SqlStatement {
             sql,
             has_include,
             include_keys,
+            has_sql_key,
+            sql_key,
         };
     }
 }
@@ -68,13 +83,23 @@ pub struct XmlParsedState {
     /// 过程中变化
     /// 是否在语句中
     pub in_statement: bool,
+    /// 是否在语句中
+    pub in_sql_key: bool,
     /// 是否有子句
     pub has_include: bool,
+    /// 是否有取键语句
+    pub has_sql_key: bool,
     /// 当前ID
     pub current_id: String,
+    /// 取键语句ID
+    pub current_key_id: String,
     /// 子集key
     pub include_keys: Vec<String>,
     /// 过程中累计
+    /// 主连接器
+    pub sql_builder: StringBuilder,
+    /// 取键语句连接器
+    pub key_sql_builder: StringBuilder,
     /// 语句集
     pub statements: Vec<SqlStatement>,
     /// 语句集
@@ -89,13 +114,29 @@ impl XmlParsedState {
     pub fn new() -> Self {
         return XmlParsedState {
             in_statement: false,
+            in_sql_key: false,
             has_include: false,
+            has_sql_key: false,
+            sql_builder: StringBuilder::new(),
+            key_sql_builder: StringBuilder::new(),
             current_id: String::from(""),
+            current_key_id: String::from(""),
             include_keys: Vec::new(),
             statements: Vec::new(),
             sql_part_map: HashMap::new(),
             filename: String::from(""),
         };
+    }
+
+    pub fn reset(&mut self) {
+        self.in_statement = false;
+        self.in_sql_key = false;
+        self.has_include = false;
+        self.has_sql_key = false;
+        self.current_id = String::from("");
+        self.current_key_id = String::from("");
+        self.sql_builder.clear();
+        self.key_sql_builder.clear();
     }
 }
 
@@ -137,7 +178,6 @@ pub trait Parser {
         let file = fs::File::open(filename).unwrap();
         let buf = io::BufReader::new(file);
         let parser = EventReader::new(buf);
-        let mut builder = StringBuilder::new();
         let mut state = XmlParsedState::new();
         state.filename = filename.clone();
         for e in parser {
@@ -145,20 +185,16 @@ pub trait Parser {
                 Ok(XmlEvent::StartElement {
                     name, attributes, ..
                 }) => {
-                    self.parse_start_element(name, attributes, &mut builder, &mut state);
+                    self.parse_start_element(name, attributes, &mut state);
                 }
                 Ok(XmlEvent::EndElement { name }) => {
-                    self.parse_end_element(name, &mut builder, &mut state);
+                    self.parse_end_element(name, &mut state);
                 }
                 Ok(XmlEvent::CData(s)) => {
-                    if state.in_statement {
-                        builder.append(s);
-                    }
+                    self.fill_content(&mut state, s);
                 }
                 Ok(XmlEvent::Characters(s)) => {
-                    if state.in_statement {
-                        builder.append(s);
-                    }
+                    self.fill_content(&mut state, s);
                 }
                 Err(e) => {
                     info!("Error: {}", e);
@@ -167,24 +203,27 @@ pub trait Parser {
                 _ => {}
             }
         }
-        info!("{}", state.filename);
         self.replace_and_fill(sql_store, &state.statements, &state.sql_part_map);
+    }
+
+    fn fill_content(&self, state: &mut XmlParsedState, s: String) {
+        if state.in_statement {
+            if state.in_sql_key {
+                state.key_sql_builder.append(s);
+            } else {
+                state.sql_builder.append(s);
+            }
+        }
     }
 
     fn parse_start_element(
         &self,
         name: OwnedName,
         attributes: Vec<OwnedAttribute>,
-        builder: &mut StringBuilder,
         state: &mut XmlParsedState,
     );
 
-    fn parse_end_element(
-        &self,
-        name: OwnedName,
-        builder: &mut StringBuilder,
-        state: &mut XmlParsedState,
-    ) {
+    fn parse_end_element(&self, name: OwnedName, state: &mut XmlParsedState) {
         let element_name = name.local_name.as_str().to_ascii_lowercase();
         if parse_helper::match_statement(&element_name) {
             let mode = Mode::from(element_name.as_str());
@@ -193,28 +232,39 @@ pub trait Parser {
                     let sql_stat = SqlStatement::new(
                         mode,
                         state.current_id.clone(),
-                        builder.to_string(),
+                        state.sql_builder.to_string(),
                         state.has_include,
                         state.include_keys.clone(),
+                        false,
+                        SqlKey {
+                            key_name: String::from(""),
+                            key_sql: String::from(""),
+                        },
                     );
                     state
                         .sql_part_map
                         .insert(state.current_id.clone(), sql_stat);
+                    state.reset();
                 }
                 _ => {
                     let sql_stat = SqlStatement::new(
                         mode,
                         state.current_id.clone(),
-                        builder.to_string(),
+                        state.sql_builder.to_string(),
                         state.has_include,
                         state.include_keys.clone(),
+                        state.has_sql_key,
+                        SqlKey {
+                            key_name: state.current_key_id.clone(),
+                            key_sql: state.key_sql_builder.to_string(),
+                        },
                     );
                     state.statements.push(sql_stat);
+                    state.reset();
                 }
             }
-            state.in_statement = false;
-            state.current_id = String::from("");
-            builder.clear();
+        } else if element_name == "selectkey" {
+            state.in_sql_key = false;
         }
     }
 
@@ -236,6 +286,10 @@ pub trait Parser {
                 self.clear_and_push(&sql_stat, sql_store);
             } else {
                 self.clear_and_push(&sql.sql, sql_store);
+            }
+            if sql.has_sql_key {
+                sql_store.push("--- ".to_string() + &sql.sql_key.key_name);
+                self.clear_and_push(&sql.sql_key.key_sql, sql_store);
             }
         }
     }

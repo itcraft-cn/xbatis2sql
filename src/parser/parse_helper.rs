@@ -24,10 +24,10 @@ pub fn search_matched_attr(
 
 /// 是否匹配语句块
 pub fn match_statement(element_name: &String) -> bool {
-    *element_name == "select"
+    return *element_name == "statement"
+        || *element_name == "select"
         || *element_name == "insert"
         || *element_name == "update"
         || *element_name == "delete"
-        || *element_name == "statement"
         || *element_name == "sql"
 }
