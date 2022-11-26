@@ -1,3 +1,4 @@
+use regex::Regex;
 use rstring_builder::StringBuilder;
 use std::collections::HashMap;
 use std::*;
@@ -136,4 +137,9 @@ impl XmlParsedState {
         self.sql_builder.clear();
         self.key_sql_builder.clear();
     }
+}
+
+pub struct RegexReplacement {
+    pub regex: Regex,
+    pub target: String,
 }

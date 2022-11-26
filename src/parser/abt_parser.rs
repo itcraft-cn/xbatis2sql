@@ -189,18 +189,42 @@ pub trait Parser {
                     let sql_part = sql_part_map.get_key_value(key).unwrap();
                     sql = replace_included_sql(&sql, &sql_part.0, &sql_part.1.sql);
                 }
-                self.clear_and_push(&sql, sql_store);
+                self.clear_and_push(sql_store, &sql);
             } else {
-                self.clear_and_push(&stat.sql, sql_store);
+                self.clear_and_push(sql_store, &stat.sql);
             }
             if stat.has_sql_key {
                 sql_store.push("--- ".to_string() + &stat.sql_key.key);
-                self.clear_and_push(&stat.sql_key.sql, sql_store);
+                self.clear_and_push(sql_store, &stat.sql_key.sql);
             }
         }
     }
 
-    fn clear_and_push(&self, origin_sql: &String, sql_store: &mut Vec<String>);
+    fn clear_and_push(&self, sql_store: &mut Vec<String>, origin_sql: &String);
+
+    fn loop_clear_and_push(
+        &self,
+        sql_store: &mut Vec<String>,
+        regex_replacements: &Vec<RegexReplacement>,
+        origin_sql: &String,
+    ) {
+        let mut sql = String::from(origin_sql.to_ascii_uppercase().trim());
+        for regex_replacement in regex_replacements.iter() {
+            sql = self.regex_clear_and_push(&sql, regex_replacement);
+        }
+        sql_store.push(sql + ";");
+    }
+
+    fn regex_clear_and_push(
+        &self,
+        origin_sql: &String,
+        regex_replacement: &RegexReplacement,
+    ) -> String {
+        return regex_replacement
+            .regex
+            .replace_all(origin_sql, regex_replacement.target.as_str())
+            .to_string();
+    }
 
     fn save(&self, output_dir: &String, sql_store: Vec<String>) {
         info!(

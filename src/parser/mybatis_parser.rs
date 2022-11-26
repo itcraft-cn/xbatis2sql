@@ -10,18 +10,48 @@ lazy_static! {
 }
 
 lazy_static! {
-    static ref RE0: Regex = Regex::new("[\t ]?--[^\n]*\n").unwrap();
-    static ref RE1: Regex = Regex::new("[\r\n\t ]+").unwrap();
-    static ref RE2: Regex = Regex::new("#\\{[^#{]+\\}").unwrap();
-    static ref RE3: Regex = Regex::new("\\$\\{[^${]+\\}").unwrap();
-    static ref RE_FIX1: Regex = Regex::new("WHERE[ ]+AND[ ]+").unwrap();
-    static ref RE_FIX2: Regex = Regex::new("WHERE[ ]+OR[ ]+").unwrap();
-    static ref RE_FIX3: Regex = Regex::new(",[ ]+WHERE").unwrap();
-    static ref RE_FIX4: Regex = Regex::new(",$").unwrap();
+    static ref RE_VEC: Vec<RegexReplacement> = create_replcements();
 }
 
 /// `MyBatis` 实现
 const PARSER: MyBatisParser = MyBatisParser {};
+
+fn create_replcements() -> Vec<RegexReplacement> {
+    return vec![
+        RegexReplacement {
+            regex: Regex::new("[\t ]?--[^\n]*\n").unwrap(),
+            target: String::from(""),
+        },
+        RegexReplacement {
+            regex: Regex::new("[\r\n\t ]+").unwrap(),
+            target: String::from(" "),
+        },
+        RegexReplacement {
+            regex: Regex::new("#\\{[^#{]+\\}").unwrap(),
+            target: String::from(":?"),
+        },
+        RegexReplacement {
+            regex: Regex::new("\\$\\{[^${]+\\}").unwrap(),
+            target: String::from(":?"),
+        },
+        RegexReplacement {
+            regex: Regex::new("WHERE[ ]+AND[ ]+").unwrap(),
+            target: String::from("WHERE "),
+        },
+        RegexReplacement {
+            regex: Regex::new("WHERE[ ]+OR[ ]+").unwrap(),
+            target: String::from("WHERE "),
+        },
+        RegexReplacement {
+            regex: Regex::new(",[ ]+WHERE").unwrap(),
+            target: String::from(" WHERE"),
+        },
+        RegexReplacement {
+            regex: Regex::new(",$").unwrap(),
+            target: String::from(""),
+        },
+    ];
+}
 
 /// 调用 `MyBatis` 实现进行解析
 pub fn parse(output_dir: &String, files: &Vec<String>) {
@@ -47,16 +77,7 @@ impl Parser for MyBatisParser {
         }
     }
 
-    fn clear_and_push(&self, origin_sql: &String, sql_store: &mut Vec<String>) {
-        let mut sql = String::from(origin_sql.to_ascii_uppercase().trim());
-        sql = RE0.replace_all(sql.as_str(), "").to_string();
-        sql = RE1.replace_all(sql.as_str(), " ").to_string();
-        sql = RE2.replace_all(sql.as_str(), ":?").to_string();
-        sql = RE3.replace_all(sql.as_str(), ":?").to_string();
-        sql = RE_FIX1.replace_all(sql.as_str(), "WHERE ").to_string();
-        sql = RE_FIX2.replace_all(sql.as_str(), "WHERE ").to_string();
-        sql = RE_FIX3.replace_all(sql.as_str(), " WHERE").to_string();
-        sql = RE_FIX4.replace_all(sql.as_str(), "").to_string();
-        sql_store.push(sql + ";");
+    fn clear_and_push(&self, sql_store: &mut Vec<String>, origin_sql: &String) {
+        self.loop_clear_and_push(sql_store, &RE_VEC, origin_sql)
     }
 }
