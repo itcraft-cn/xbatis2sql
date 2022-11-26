@@ -26,7 +26,7 @@ pub trait Parser {
 
     fn check_and_parse(&self, file: &String, sql_store: &mut Vec<String>) {
         if self.detect_match(file) {
-            info!("{:?}", file);
+            info!("try to parse [{}]", file);
             self.read_and_parse(file, sql_store);
         }
     }
@@ -34,7 +34,6 @@ pub trait Parser {
     fn detect_match(&self, file: &String) -> bool;
 
     fn detect_match_with_regex(&self, file: &String, re: &Regex) -> bool {
-        debug!(">>{:?}", file);
         let result = fs::read_to_string(file);
         if result.is_ok() {
             return re.is_match(result.unwrap().as_str());
@@ -71,7 +70,7 @@ pub trait Parser {
                     self.fill_content(&mut state, s);
                 }
                 Err(e) => {
-                    info!("Error: {}", e);
+                    warn!("Error: {}", e);
                     break;
                 }
                 _ => {}
