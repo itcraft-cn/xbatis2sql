@@ -132,6 +132,7 @@ impl XmlParsedState {
         self.has_sql_key = false;
         self.current_id = String::from("");
         self.current_key_id = String::from("");
+        self.include_keys = Vec::new();
         self.sql_builder.clear();
         self.key_sql_builder.clear();
     }
