@@ -37,34 +37,14 @@ impl Parser for IBatisParser {
         return self.detect_match_with_regex(file, &RE);
     }
 
-    fn parse_start_element(
+    fn ex_parse_start_element(
         &self,
-        name: OwnedName,
+        _name: OwnedName,
+        _element_name: &String,
         attributes: Vec<OwnedAttribute>,
         state: &mut XmlParsedState,
     ) {
-        let element_name = name.local_name.as_str().to_ascii_lowercase();
-        if match_statement(&element_name) {
-            state.in_statement = true;
-            search_matched_attr(&attributes, "id", |attr| {
-                state.current_id = attr.value.clone();
-            });
-        } else if element_name == "selectkey" {
-            state.in_sql_key = true;
-            state.has_sql_key = true;
-            state.current_key_id = state.current_id.as_str().to_string() + ".selectKey";
-        } else if element_name == "where" {
-            state.sql_builder.append(" where ");
-        } else if element_name == "include" {
-            search_matched_attr(&attributes, "refid", |attr| {
-                state.sql_builder.append(" __INCLUDE_ID_");
-                let refid = attr.value.clone();
-                state.sql_builder.append(refid.as_str());
-                state.sql_builder.append("_END__");
-                state.has_include = true;
-                state.include_keys.push(refid);
-            });
-        } else if state.in_statement {
+        if state.in_statement {
             search_matched_attr(&attributes, "prepend", |attr| {
                 state
                     .sql_builder
