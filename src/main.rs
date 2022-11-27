@@ -16,6 +16,7 @@ use args::*;
 use log::*;
 use logger::*;
 use parser::*;
+use parser::parser::*;
 use scanner::*;
 
 /// 主函数，解析参数并调用后续函数
@@ -42,7 +43,7 @@ fn choose_parser(mode: parse_args::Mode, src_dir: &String, output_dir: &String) 
     saver::save::save(output_dir, sql_store);
 }
 
-fn fetch_parser(mode: Mode) -> Box<dyn abt_parser::Parser> {
+fn fetch_parser(mode: Mode) -> Box<dyn Parser> {
     match mode {
         Mode::IBatis => {
             return Box::new(ibatis_parser::PARSER);
