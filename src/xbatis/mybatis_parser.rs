@@ -1,5 +1,5 @@
 use super::def::*;
-use super::parser::*;
+use super::xml_parser::*;
 use lazy_static::*;
 use regex::Regex;
 use xml::attribute::*;

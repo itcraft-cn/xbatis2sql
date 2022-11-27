@@ -3,35 +3,35 @@
 /// 解析参数
 mod args;
 /// 日志处置
-mod logger;
-/// 解析器
-mod parser;
+mod logit;
 /// 保存
-mod saver;
+mod save;
 /// 扫描器
-mod scanner;
+mod scan;
+/// 解析器
+mod xbatis;
 
-use args::parse_args::Mode;
+use args::args_parser::Mode;
 use args::*;
 use log::*;
-use logger::*;
-use parser::*;
-use parser::parser::*;
-use scanner::*;
+use logit::*;
+use scan::*;
+use xbatis::xml_parser::*;
+use xbatis::*;
 
 /// 主函数，解析参数并调用后续函数
 fn main() {
-    let args = parse_args::check_args();
+    let args = args_parser::check_args();
     if args.fast_fail || args.show_version {
-        parse_args::print_usage(&args);
+        args_parser::print_usage(&args);
     } else {
         choose_parser(args.mode, &args.src_dir, &args.output_dir);
     }
 }
 
 /// 选择并执行对应的解析器
-fn choose_parser(mode: parse_args::Mode, src_dir: &String, output_dir: &String) {
-    log_init::init_logger();
+fn choose_parser(mode: args_parser::Mode, src_dir: &String, output_dir: &String) {
+    log_initializer::init_logger();
     info!(
         "try to parse files in {:?}, fetch sql to {:?}",
         src_dir, output_dir
@@ -40,7 +40,7 @@ fn choose_parser(mode: parse_args::Mode, src_dir: &String, output_dir: &String) 
     xml_scanner::scan(&mut files, src_dir);
     let parser = fetch_parser(mode);
     let sql_store = parser.parse(&files);
-    saver::save::save(output_dir, sql_store);
+    save::sql_saver::save(output_dir, sql_store);
 }
 
 fn fetch_parser(mode: Mode) -> Box<dyn Parser> {
