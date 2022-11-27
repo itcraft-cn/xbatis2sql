@@ -15,7 +15,7 @@ lazy_static! {
 }
 
 /// `iBATIS` 实现
-pub const PARSER: IBatisParser = IBatisParser {};
+pub const IBATIS_PARSER: IBatisParser = IBatisParser {};
 
 fn create_replcements() -> Vec<RegexReplacement> {
     return vec![

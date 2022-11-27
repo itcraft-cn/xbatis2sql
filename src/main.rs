@@ -11,45 +11,47 @@ mod scan;
 /// 解析器
 mod xbatis;
 
-use args::args_parser::Mode;
-use args::*;
+use args::args_parser::Mode::*;
+use args::args_parser::*;
 use log::*;
-use logit::*;
-use scan::*;
+use logit::log_initializer::*;
+use save::sql_saver::*;
+use scan::xml_scanner::*;
+use xbatis::ibatis_parser::*;
+use xbatis::mybatis_parser::*;
 use xbatis::xml_parser::*;
-use xbatis::*;
 
 /// 主函数，解析参数并调用后续函数
 fn main() {
-    let args = args_parser::check_args();
+    let args = check_args();
     if args.fast_fail || args.show_version {
-        args_parser::print_usage(&args);
+        print_usage(&args);
     } else {
         choose_parser(args.mode, &args.src_dir, &args.output_dir);
     }
 }
 
 /// 选择并执行对应的解析器
-fn choose_parser(mode: args_parser::Mode, src_dir: &String, output_dir: &String) {
-    log_initializer::init_logger();
+fn choose_parser(mode: Mode, src_dir: &String, output_dir: &String) {
+    init_logger();
     info!(
         "try to parse files in {:?}, fetch sql to {:?}",
         src_dir, output_dir
     );
     let mut files: Vec<String> = Vec::new();
-    xml_scanner::scan(&mut files, src_dir);
+    scan(&mut files, src_dir);
     let parser = fetch_parser(mode);
     let sql_store = parser.parse(&files);
-    save::sql_saver::save(output_dir, sql_store);
+    save(output_dir, sql_store);
 }
 
 fn fetch_parser(mode: Mode) -> Box<dyn Parser> {
     match mode {
-        Mode::IBatis => {
-            return Box::new(ibatis_parser::PARSER);
+        IBatis => {
+            return Box::new(IBATIS_PARSER);
         }
-        Mode::MyBatis => {
-            return Box::new(mybatis_parser::PARSER);
+        MyBatis => {
+            return Box::new(MYBATIS_PARSER);
         }
         _ => {
             panic!("not supported mode");

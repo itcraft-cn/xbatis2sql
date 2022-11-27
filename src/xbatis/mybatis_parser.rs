@@ -14,7 +14,7 @@ lazy_static! {
 }
 
 /// `MyBatis` 实现
-pub const PARSER: MyBatisParser = MyBatisParser {};
+pub const MYBATIS_PARSER: MyBatisParser = MyBatisParser {};
 
 fn create_replcements() -> Vec<RegexReplacement> {
     return vec![
