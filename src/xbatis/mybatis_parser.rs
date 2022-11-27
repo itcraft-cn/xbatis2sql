@@ -18,38 +18,14 @@ pub const PARSER: MyBatisParser = MyBatisParser {};
 
 fn create_replcements() -> Vec<RegexReplacement> {
     return vec![
-        RegexReplacement {
-            regex: Regex::new("[\t ]?--[^\n]*\n").unwrap(),
-            target: String::from(""),
-        },
-        RegexReplacement {
-            regex: Regex::new("[\r\n\t ]+").unwrap(),
-            target: String::from(" "),
-        },
-        RegexReplacement {
-            regex: Regex::new("#\\{[^#{]+\\}").unwrap(),
-            target: String::from(":?"),
-        },
-        RegexReplacement {
-            regex: Regex::new("\\$\\{[^${]+\\}").unwrap(),
-            target: String::from(":?"),
-        },
-        RegexReplacement {
-            regex: Regex::new("WHERE[ ]+AND[ ]+").unwrap(),
-            target: String::from("WHERE "),
-        },
-        RegexReplacement {
-            regex: Regex::new("WHERE[ ]+OR[ ]+").unwrap(),
-            target: String::from("WHERE "),
-        },
-        RegexReplacement {
-            regex: Regex::new(",[ ]+WHERE").unwrap(),
-            target: String::from(" WHERE"),
-        },
-        RegexReplacement {
-            regex: Regex::new(",$").unwrap(),
-            target: String::from(""),
-        },
+        RegexReplacement::new("[\t ]?--[^\n]*\n", ""),
+        RegexReplacement::new("[\r\n\t ]+", " "),
+        RegexReplacement::new("#\\{[^#{]+\\}", ":?"),
+        RegexReplacement::new("\\$\\{[^${]+\\}", ":?"),
+        RegexReplacement::new("WHERE[ ]+AND[ ]+", "WHERE "),
+        RegexReplacement::new("WHERE[ ]+OR[ ]+", "WHERE "),
+        RegexReplacement::new(",[ ]+WHERE", " WHERE"),
+        RegexReplacement::new(",$", ""),
     ];
 }
 

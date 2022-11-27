@@ -143,3 +143,12 @@ pub struct RegexReplacement {
     pub regex: Regex,
     pub target: String,
 }
+
+impl RegexReplacement {
+    pub fn new(regex: &str, target: &str) -> Self {
+        return RegexReplacement {
+            regex: Regex::new(regex).unwrap(),
+            target: String::from(target),
+        };
+    }
+}
