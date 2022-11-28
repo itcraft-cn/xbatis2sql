@@ -11,12 +11,13 @@ mod scan;
 /// 解析器
 mod xbatis;
 
-use args::args_parser::Mode::*;
+use args::args_parser::XBatisMode::*;
 use args::args_parser::*;
 use log::*;
 use logit::log_initializer::*;
 use save::sql_saver::*;
 use scan::xml_scanner::*;
+use xbatis::def::*;
 use xbatis::ibatis_parser::*;
 use xbatis::mybatis_parser::*;
 use xbatis::xml_parser::*;
@@ -24,15 +25,17 @@ use xbatis::xml_parser::*;
 /// 主函数，解析参数并调用后续函数
 fn main() {
     let args = check_args();
-    if args.fast_fail || args.show_version {
+    if args.fast_fail {
         print_usage(&args);
+    } else if args.show_version {
+        print_version();
     } else {
-        choose_parser(args.mode, &args.src_dir, &args.output_dir);
+        parse_xbatis_xml(args.mode, args.db_type, &args.src_dir, &args.output_dir);
     }
 }
 
 /// 选择并执行对应的解析器
-fn choose_parser(mode: Mode, src_dir: &String, output_dir: &String) {
+fn parse_xbatis_xml(mode: XBatisMode, db_type: DbType, src_dir: &String, output_dir: &String) {
     init_logger();
     info!(
         "try to parse files in {:?}, fetch sql to {:?}",
@@ -40,21 +43,29 @@ fn choose_parser(mode: Mode, src_dir: &String, output_dir: &String) {
     );
     let mut files: Vec<String> = Vec::new();
     scan(&mut files, src_dir);
-    let parser = fetch_parser(mode);
+    let parser = choose_parser(mode, convert(db_type));
     let sql_store = parser.parse(&files);
     save(output_dir, sql_store);
 }
 
-fn fetch_parser(mode: Mode) -> Box<dyn Parser> {
+fn choose_parser(mode: XBatisMode, dialect_type: DialectType) -> Box<dyn Parser> {
     match mode {
         IBatis => {
-            return Box::new(IBATIS_PARSER);
+            return Box::new(create_ibatis_parser(dialect_type));
         }
         MyBatis => {
-            return Box::new(MYBATIS_PARSER);
+            return Box::new(create_mybatis_parser(dialect_type));
         }
         _ => {
             panic!("not supported mode");
         }
     }
+}
+
+fn convert(db_type: DbType) -> DialectType {
+    return match db_type {
+        DbType::Oracle => DialectType::Oracle,
+        DbType::MySQL => DialectType::MySQL,
+        _ => panic!("unknown dialect type"),
+    };
 }
