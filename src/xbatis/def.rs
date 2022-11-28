@@ -3,6 +3,11 @@ use rstring_builder::StringBuilder;
 use std::collections::HashMap;
 use std::*;
 
+pub enum DialectType {
+    Oracle,
+    MySQL,
+}
+
 pub enum Mode {
     Statement,
     Select,

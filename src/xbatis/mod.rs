@@ -1,5 +1,5 @@
 /// 供解析器使用的内部定义
-mod def;
+pub mod def;
 /// iBATIS 解析器
 pub mod ibatis_parser;
 /// MyBatis 解析器

@@ -10,6 +10,8 @@ use xml::reader::*;
 
 /// 解析器
 pub trait Parser {
+    fn setup_dialect_type(&mut self, dialect_type: DialectType);
+
     fn parse(&self, files: &Vec<String>) -> Vec<String> {
         let mut sql_store: Vec<String> = Vec::new();
         for file in files {

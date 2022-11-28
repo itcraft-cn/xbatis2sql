@@ -21,6 +21,8 @@
             },
             "args": [
                 "-i",
+                "-t",
+                "oracle",
                 "-s",
                 "./test_data",
                 "-o",
@@ -45,6 +47,8 @@
             },
             "args": [
                 "-m",
+                "-t",
+                "oracle",
                 "-s",
                 "./test_data",
                 "-o",

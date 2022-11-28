@@ -10,19 +10,28 @@ lazy_static! {
     static ref RE: Regex = Regex::new("DTD Mapper 3\\.0").unwrap();
 }
 
-lazy_static! {
-    static ref RE_VEC: Vec<RegexReplacement> = create_replcements();
+/// `MyBatis` 实现
+pub fn create_mybatis_parser(dialect_type: DialectType) -> MyBatisParser {
+    let re_vec;
+    {
+        re_vec = create_replcements(&dialect_type);
+    }
+    return MyBatisParser {
+        dialect_type,
+        re_vec: re_vec,
+    };
 }
 
-/// `MyBatis` 实现
-pub const MYBATIS_PARSER: MyBatisParser = MyBatisParser {};
-
-fn create_replcements() -> Vec<RegexReplacement> {
+fn create_replcements(dialect_type: &DialectType) -> Vec<RegexReplacement> {
+    let placeholder = match dialect_type {
+        DialectType::Oracle => ":?",
+        DialectType::MySQL => "@1",
+    };
     return vec![
         RegexReplacement::new("[\t ]?--[^\n]*\n", ""),
         RegexReplacement::new("[\r\n\t ]+", " "),
-        RegexReplacement::new("#\\{[^#{]+\\}", ":?"),
-        RegexReplacement::new("\\$\\{[^${]+\\}", ":?"),
+        RegexReplacement::new("#\\{[^#{]+\\}", placeholder),
+        RegexReplacement::new("\\$\\{[^${]+\\}", placeholder),
         RegexReplacement::new("WHERE[ ]+AND[ ]+", "WHERE "),
         RegexReplacement::new("WHERE[ ]+OR[ ]+", "WHERE "),
         RegexReplacement::new(",[ ]+WHERE", " WHERE"),
@@ -32,9 +41,16 @@ fn create_replcements() -> Vec<RegexReplacement> {
     ];
 }
 
-pub struct MyBatisParser {}
+pub struct MyBatisParser {
+    dialect_type: DialectType,
+    re_vec: Vec<RegexReplacement>,
+}
 
 impl Parser for MyBatisParser {
+    fn setup_dialect_type(&mut self, dialect_type: DialectType) {
+        self.dialect_type = dialect_type;
+    }
+
     fn detect_match(&self, file: &String) -> bool {
         return self.detect_match_with_regex(file, &RE);
     }
@@ -96,6 +112,6 @@ impl Parser for MyBatisParser {
     }
 
     fn clear_and_push(&self, sql_store: &mut Vec<String>, origin_sql: &String) {
-        self.loop_clear_and_push(sql_store, &RE_VEC, origin_sql)
+        self.loop_clear_and_push(sql_store, &self.re_vec, origin_sql)
     }
 }
