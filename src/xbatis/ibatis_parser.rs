@@ -64,11 +64,9 @@ impl Parser for IBatisParser {
     ) {
         if state.in_statement {
             search_matched_attr(attributes, "prepend", |attr| {
-                state
-                    .sql_builder
-                    .append(" ")
-                    .append(attr.value.as_str())
-                    .append(" ");
+                state.sql_builder += " ";
+                state.sql_builder += attr.value.as_str();
+                state.sql_builder += " ";
             });
         }
     }

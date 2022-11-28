@@ -62,7 +62,7 @@ impl Parser for MyBatisParser {
         state: &mut XmlParsedState,
     ) {
         if element_name == "set" {
-            state.sql_builder.append(" set ");
+            state.sql_builder += " set ";
         } else if element_name == "trim" {
             state.in_loop = true;
             search_matched_attr(attributes, "prefix", |attr| {

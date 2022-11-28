@@ -1,5 +1,4 @@
 use regex::Regex;
-use rstring_builder::StringBuilder;
 use std::collections::HashMap;
 use std::*;
 
@@ -107,9 +106,9 @@ pub struct XmlParsedState {
     /// 过程中累计
 
     /// 主连接器
-    pub sql_builder: StringBuilder,
+    pub sql_builder: String,
     /// 取键语句连接器
-    pub key_sql_builder: StringBuilder,
+    pub key_sql_builder: String,
     /// 语句集
     pub statements: Vec<SqlStatement>,
     /// 语句集
@@ -130,8 +129,8 @@ impl XmlParsedState {
             in_loop: false,
             has_include: false,
             has_sql_key: false,
-            sql_builder: StringBuilder::new(),
-            key_sql_builder: StringBuilder::new(),
+            sql_builder: String::from(""),
+            key_sql_builder: String::from(""),
             current_id: String::from(""),
             current_key_id: String::from(""),
             include_keys: Vec::new(),
