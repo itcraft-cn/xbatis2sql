@@ -1,6 +1,6 @@
 [package]
 name = "xbatis2sql"
-version = "0.1.7-dev"
+version = "0.1.7"
 edition = "2021"
 authors = ["Helly Guo <hellyguo@foxmail.com>"]
 exclude = ["tests", "examples"]
