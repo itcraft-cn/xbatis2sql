@@ -24,8 +24,10 @@ use xbatis::xml_parser::*;
 /// 主函数，解析参数并调用后续函数
 fn main() {
     let args = check_args();
-    if args.fast_fail || args.show_version {
+    if args.fast_fail{
         print_usage(&args);
+    } else if args.show_version {
+        print_version();
     } else {
         choose_parser(args.mode, &args.src_dir, &args.output_dir);
     }

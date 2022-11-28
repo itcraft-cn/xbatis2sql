@@ -27,12 +27,12 @@ pub struct Args {
 impl Args {
     fn new(mode: Mode, src_dir: &String, output_dir: &String, opts: Options) -> Self {
         return Args {
-            mode: mode,
+            mode,
             src_dir: src_dir.clone(),
             output_dir: output_dir.clone(),
             fast_fail: false,
             show_version: false,
-            opts: opts,
+            opts,
         };
     }
 
@@ -43,7 +43,7 @@ impl Args {
             output_dir: String::from(""),
             fast_fail: true,
             show_version: false,
-            opts: opts,
+            opts,
         };
     }
 
@@ -54,7 +54,7 @@ impl Args {
             output_dir: String::from(""),
             fast_fail: false,
             show_version: true,
-            opts: opts,
+            opts,
         };
     }
 }
@@ -108,17 +108,17 @@ fn build_opts() -> Options {
 
 /// 打印使用方法
 pub fn print_usage(args: &Args) {
-    if args.fast_fail {
-        print!(
-            "{}",
-            args.opts.usage("Usage: xbatis2sql [-i|-m] -s ... -o ...")
-        );
-    } else {
-        println!("xbatis2sql");
-        println!();
-        println!("\tcollect sql statements from iBATIS sqlmap files/MyBatis mapper files.");
-        println!();
-        println!("version: {}", env!("CARGO_PKG_VERSION"));
-        println!();
-    }
+    print!(
+        "{}",
+        args.opts.usage("Usage: xbatis2sql [-i|-m] -s ... -o ...")
+    );
+}
+
+pub fn print_version() {
+    println!("xbatis2sql");
+    println!();
+    println!("\tcollect sql statements from iBATIS sqlmap files/MyBatis mapper files.");
+    println!();
+    println!("version: {}", env!("CARGO_PKG_VERSION"));
+    println!();
 }
