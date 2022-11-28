@@ -1,4 +1,5 @@
 use super::def::*;
+use super::parse_helper::search_matched_attr;
 use super::xml_parser::*;
 use lazy_static::*;
 use regex::Regex;
@@ -25,6 +26,8 @@ fn create_replcements() -> Vec<RegexReplacement> {
         RegexReplacement::new("WHERE[ ]+AND[ ]+", "WHERE "),
         RegexReplacement::new("WHERE[ ]+OR[ ]+", "WHERE "),
         RegexReplacement::new(",[ ]+WHERE", " WHERE"),
+        RegexReplacement::new(",[ ]*\\)VALUES[ ]*\\(", ")VALUES("),
+        RegexReplacement::new("[ ]*,[ ]*\\)$", ")"),
         RegexReplacement::new(",$", ""),
     ];
 }
@@ -40,11 +43,55 @@ impl Parser for MyBatisParser {
         &self,
         _name: OwnedName,
         element_name: &String,
-        _attributes: Vec<OwnedAttribute>,
+        attributes: &Vec<OwnedAttribute>,
         state: &mut XmlParsedState,
     ) {
         if element_name == "set" {
             state.sql_builder.append(" set ");
+        } else if element_name == "trim" {
+            state.in_loop = true;
+            search_matched_attr(attributes, "prefix", |attr| {
+                self.fill_content(state, attr.value.clone());
+            });
+            search_matched_attr(attributes, "suffix", |attr| {
+                state.loop_def.suffix = attr.value.clone();
+            });
+        } else if element_name == "foreach" {
+            state.in_loop = true;
+            search_matched_attr(attributes, "open", |attr| {
+                self.fill_content(state, attr.value.clone());
+            });
+            search_matched_attr(attributes, "close", |attr| {
+                state.loop_def.suffix = attr.value.clone();
+            });
+            search_matched_attr(attributes, "separator", |attr| {
+                state.loop_def.separator = attr.value.clone();
+            });
+        }
+    }
+
+    fn ex_parse_end_element(
+        &self,
+        _name: OwnedName,
+        element_name: &String,
+        state: &mut XmlParsedState,
+    ) {
+        if element_name == "trim" {
+            let suffix;
+            {
+                suffix = &state.loop_def.suffix;
+            }
+            self.fill_content(state, suffix.clone());
+            state.in_loop = false;
+            state.loop_def.reset();
+        } else if element_name == "foreach" {
+            let suffix;
+            {
+                suffix = &state.loop_def.suffix;
+            }
+            self.fill_content(state, suffix.clone());
+            state.in_loop = false;
+            state.loop_def.reset();
         }
     }
 

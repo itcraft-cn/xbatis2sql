@@ -57,11 +57,11 @@ pub trait Parser {
                 Ok(XmlEvent::EndElement { name }) => {
                     self.parse_end_element(name, &mut state);
                 }
-                Ok(XmlEvent::CData(s)) => {
-                    self.fill_content(&mut state, s);
+                Ok(XmlEvent::CData(content)) => {
+                    self.fill_xml_content(&mut state, content);
                 }
-                Ok(XmlEvent::Characters(s)) => {
-                    self.fill_content(&mut state, s);
+                Ok(XmlEvent::Characters(content)) => {
+                    self.fill_xml_content(&mut state, content);
                 }
                 Err(e) => {
                     warn!("Error: {}", e);
@@ -73,12 +73,23 @@ pub trait Parser {
         self.replace_and_fill(sql_store, &state.statements, &state.sql_part_map);
     }
 
-    fn fill_content(&self, state: &mut XmlParsedState, s: String) {
+    fn fill_xml_content(&self, state: &mut XmlParsedState, content: String) {
+        self.fill_content(state, content);
+        if state.in_loop {
+            let separator;
+            {
+                separator = state.loop_def.separator.clone();
+            }
+            self.fill_content(state, separator);
+        }
+    }
+
+    fn fill_content(&self, state: &mut XmlParsedState, content: String) {
         if state.in_statement {
             if state.in_sql_key {
-                state.key_sql_builder.append(s);
+                state.key_sql_builder.append(content.clone());
             } else {
-                state.sql_builder.append(s);
+                state.sql_builder.append(content.clone());
             }
         }
     }
@@ -111,7 +122,7 @@ pub trait Parser {
                 state.include_keys.push(refid);
             });
         } else {
-            self.ex_parse_start_element(name, &element_name, attributes, state);
+            self.ex_parse_start_element(name, &element_name, &attributes, state);
         }
     }
 
@@ -119,7 +130,7 @@ pub trait Parser {
         &self,
         name: OwnedName,
         element_name: &String,
-        attributes: Vec<OwnedAttribute>,
+        attributes: &Vec<OwnedAttribute>,
         state: &mut XmlParsedState,
     );
 
@@ -133,8 +144,17 @@ pub trait Parser {
             }
         } else if element_name == "selectkey" {
             state.in_sql_key = false;
+        } else {
+            self.ex_parse_end_element(name, &element_name, state);
         }
     }
+
+    fn ex_parse_end_element(
+        &self,
+        name: OwnedName,
+        element_name: &String,
+        state: &mut XmlParsedState,
+    );
 
     fn handle_end_sql_part(&self, mode: Mode, state: &mut XmlParsedState) {
         let sql_stat = SqlStatement::new(

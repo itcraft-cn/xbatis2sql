@@ -27,6 +27,8 @@ fn create_replcements() -> Vec<RegexReplacement> {
         RegexReplacement::new("WHERE[ ]+AND[ ]+", "WHERE "),
         RegexReplacement::new("WHERE[ ]+OR[ ]+", "WHERE "),
         RegexReplacement::new(",[ ]+WHERE", " WHERE"),
+        RegexReplacement::new(",[ ]*\\)VALUES[ ]*\\(", ")VALUES("),
+        RegexReplacement::new("[ ]*,[ ]*\\)$", ")"),
         RegexReplacement::new(",$", ""),
     ];
 }
@@ -42,11 +44,11 @@ impl Parser for IBatisParser {
         &self,
         _name: OwnedName,
         _element_name: &String,
-        attributes: Vec<OwnedAttribute>,
+        attributes: &Vec<OwnedAttribute>,
         state: &mut XmlParsedState,
     ) {
         if state.in_statement {
-            search_matched_attr(&attributes, "prepend", |attr| {
+            search_matched_attr(attributes, "prepend", |attr| {
                 state
                     .sql_builder
                     .append(" ")
@@ -54,6 +56,14 @@ impl Parser for IBatisParser {
                     .append(" ");
             });
         }
+    }
+
+    fn ex_parse_end_element(
+        &self,
+        _name: OwnedName,
+        _element_name: &String,
+        _state: &mut XmlParsedState,
+    ) {
     }
 
     fn clear_and_push(&self, sql_store: &mut Vec<String>, origin_sql: &String) {
