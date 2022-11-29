@@ -36,8 +36,7 @@ fn create_replcements(dialect_type: &DialectType) -> Vec<RegexReplacement> {
         RegexReplacement::new("WHERE[ ]+AND[ ]+", "WHERE "),
         RegexReplacement::new("WHERE[ ]+OR[ ]+", "WHERE "),
         RegexReplacement::new(",[ ]+WHERE", " WHERE"),
-        RegexReplacement::new(",[ ]*\\)VALUES[ ]*\\(", ")VALUES("),
-        RegexReplacement::new("[ ]*,[ ]*\\)$", ")"),
+        RegexReplacement::new("[ ]*,[ ]*\\)", ")"),
         RegexReplacement::new(",$", ""),
     ];
 }
@@ -65,11 +64,9 @@ impl Parser for IBatisParser {
     ) {
         if state.in_statement {
             search_matched_attr(attributes, "prepend", |attr| {
-                state
-                    .sql_builder
-                    .append(" ")
-                    .append(attr.value.as_str())
-                    .append(" ");
+                state.sql_builder += " ";
+                state.sql_builder += attr.value.as_str();
+                state.sql_builder += " ";
             });
         }
     }

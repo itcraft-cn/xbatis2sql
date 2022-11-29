@@ -89,9 +89,9 @@ pub trait Parser {
     fn fill_content(&self, state: &mut XmlParsedState, content: String) {
         if state.in_statement {
             if state.in_sql_key {
-                state.key_sql_builder.append(content.clone());
+                state.key_sql_builder += content.as_str();
             } else {
-                state.sql_builder.append(content.clone());
+                state.sql_builder += content.as_str();
             }
         }
     }
@@ -113,13 +113,13 @@ pub trait Parser {
             state.has_sql_key = true;
             state.current_key_id = state.current_id.as_str().to_string() + ".selectKey";
         } else if element_name == "where" {
-            state.sql_builder.append(" where ");
+            state.sql_builder += " where ";
         } else if element_name == "include" {
             search_matched_attr(&attributes, "refid", |attr| {
-                state.sql_builder.append(" __INCLUDE_ID_");
+                state.sql_builder += " __INCLUDE_ID_";
                 let refid = attr.value.clone();
-                state.sql_builder.append(refid.as_str());
-                state.sql_builder.append("_END__");
+                state.sql_builder += refid.as_str();
+                state.sql_builder += "_END__";
                 state.has_include = true;
                 state.include_keys.push(refid);
             });

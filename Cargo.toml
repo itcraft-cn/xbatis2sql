@@ -1,6 +1,6 @@
 [package]
 name = "xbatis2sql"
-version = "0.1.7"
+version = "0.2.0"
 edition = "2021"
 authors = ["Helly Guo <hellyguo@foxmail.com>"]
 exclude = ["tests", "examples"]
@@ -11,7 +11,7 @@ readme = "README.md"
 description = "collect sql statements from iBATIS sqlmap files/MyBatis mapper files"
 categories = ["command-line-interface", "command-line-utilities"]
 documentation = "https://docs.rs/crate/xbatis2sql/latest"
-keywords = ["iBATIS", "MyBatis", "SQL"]
+keywords = ["iBATIS", "MyBatis", "SQL", "Parser", "XML"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -22,5 +22,4 @@ walkdir = "2.3.2"
 regex = "1.5.4"
 lazy_static = "1.4.0"
 xml-rs = "0.8.4"
-rstring-builder = "0.1.4"
 getopts = "0.2.21"

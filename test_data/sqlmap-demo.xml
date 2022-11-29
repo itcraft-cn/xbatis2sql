@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="demo">
+
+  <sql id="sql_a">
+    , (select 1 from dual)
+  </sql>
+
+  <select id="select">
+    SELECT COUNT(1)
+    <include refid="sql_a" />
+		FROM ${schema}.tab1
+		WHERE column1 = 'balabala'
+    <isGreaterThan prepend="and" property="column2" compareValue="0">
+			column2 = #column2:NUMERIC#
+		</isGreaterThan>
+  </select>
+
+  <update id="update">
+		UPDATE ${schema}.tab2
+		SET column2 = #column2:NUMERIC#
+		WHERE column1 = #column1:NUMERIC#
+	</update>
+
+
+  <delete id="delete">
+    delete from ${schema}.tab1 where column1 = #column1:NUMERIC#
+  </delete>
+
+  <insert id="insert">
+    insert into ${schema}.tab1 (column1, column2, column3, column4, column5)
+    values (#column1#, #column2#, #column3#, #column4#, #column5#)
+  </insert>
+
+</sqlMap>
