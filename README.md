@@ -56,3 +56,52 @@ After executing, the result will be exist in `/tmp/result.sql`.
 感谢 [mybatis-mapper-2-sql](https://github.com/actiontech/mybatis-mapper-2-sql) / [sqle](https://github.com/actiontech/sqle)
 
 Thanks to [mybatis-mapper-2-sql](https://github.com/actiontech/mybatis-mapper-2-sql) / [sqle](https://github.com/actiontech/sqle)
+
+## 样例 Sample
+
+### MyBatis
+
+[mapper-demo.xml](./test_data/mapper-demo.xml) 将转化为 `result.sql`。
+[mapper-demo.xml](./test_data/mapper-demo.xml) will be converted to `result.sql`.
+
+**`result.sql`**
+
+```sql
+-- ./test_data/mapper-demo.xml
+--- insert
+INSERT INTO TAB1(A,B,C,D) VALUES (:?,:?,:?,:?);
+--- insert.selectKey
+SELECT 1 FROM DUAL;
+--- select
+SELECT * FROM TAB1 WHERE COLUMN1 IN ( :?);
+--- insert2
+INSERT INTO TAB2 ( ID)VALUES ( :?);
+--- select2
+SELECT COLUMN1, COLUMN2 , (SELECT 1 FROM DUAL) FROM TAB3 WHERE COLUMN1 = :? ORDER BY COLUMN2 DESC;
+--- update
+UPDATE TAB1 SET COLUMN1 = :? WHERE COLUMN1 = :?;
+--- delete
+DELETE FROM TAB1 WHERE COLUMN1 = :? AND COLUMN2 = :?;
+```
+
+### iBATIS
+
+[sqlmap-demo.xml](./test_data/sqlmap-demo.xml) 将转化为 `result.sql`。
+[sqlmap-demo.xml](./test_data/sqlmap-demo.xml) will be converted to `result.sql`.
+
+**`result.sql`**
+
+```sql
+-- ./test_data/sqlmap-demo.xml
+--- select
+SELECT COUNT(1) , (SELECT 1 FROM DUAL) FROM __REPLACE_SCHEMA__.TAB1 WHERE COLUMN1 = 'BALABALA' AND COLUMN2 = :?;
+--- update
+UPDATE __REPLACE_SCHEMA__.TAB2 SET COLUMN2 = :? WHERE COLUMN1 = :?;
+--- delete
+DELETE FROM __REPLACE_SCHEMA__.TAB1 WHERE COLUMN1 = :?;
+--- insert
+INSERT INTO __REPLACE_SCHEMA__.TAB1 (COLUMN1, COLUMN2, COLUMN3, COLUMN4, COLUMN5) VALUES (:?, :?, :?, :?, :?);
+```
+
+> 如果是 `MySQL` 模式，`:?` 改为 `@1`。
+> If under `MySQL` mode, `:?` will be replaced with `@1`.

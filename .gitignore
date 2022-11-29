@@ -1,4 +1,6 @@
-/target
+target
+
+*.dtd
+
 Cargo.lock
-test_data
 .vscode/lua.booster.lint.json

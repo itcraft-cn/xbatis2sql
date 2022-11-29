@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="demo">
+
+	<sql id="sql_a">
+		, (select 1 from dual)
+	</sql>
+
+	<insert id="insert">
+		<selectKey keyProperty="a">
+			select 1 from dual
+		</selectKey>
+		insert into tab1(a,b,c,d) values (#{a},#{b},#{c},#{d})
+	</insert>
+
+	<select id="select">
+		SELECT * FROM tab1 where column1 in
+		<foreach collection="list" index="index" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+	</select>
+
+	<insert id="insert2">
+		insert into tab2
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				ID,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				#{id,jdbcType=VARCHAR},
+			</if>
+		</trim>
+	</insert>
+
+	<select id="select2">
+		select column1, column2
+		<include refid="sql_a" />
+		from tab3
+		<where>
+			<if test="1 == 1">
+				and column1 = #{column1}
+			</if>
+		</where>
+		order by column2 desc
+	</select>
+
+	<update id="update">
+		update tab1
+		<set>
+			<if test="1 == 1">
+				column1 = #{column1}
+			</if>
+		</set>
+		<where>
+			<if test="1 == 1">
+				and column1 = #{column1}
+			</if>
+		</where>
+	</update>
+
+	<delete id="delete">
+		delete from tab1 where column1 = #{item.column1} and column2 = #{item.column2}
+	</delete>
+
+</mapper>
