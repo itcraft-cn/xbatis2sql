@@ -1,6 +1,6 @@
 use super::def::*;
 use super::parse_helper::*;
-use super::xml_parser::*;
+use super::xbatis_parser::*;
 use lazy_static::*;
 use regex::Regex;
 use xml::attribute::*;
