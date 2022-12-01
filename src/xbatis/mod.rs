@@ -7,4 +7,4 @@ pub mod mybatis_parser;
 /// 供解析器使用的工具方法
 mod parse_helper;
 /// 抽象解析器
-pub mod xml_parser;
+pub mod xbatis_parser;

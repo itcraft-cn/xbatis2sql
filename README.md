@@ -51,17 +51,12 @@ xbatis2sql --mybatis --type Oracle --src /java/use_mybatis_proj/src --output /tm
 
 After executing, the result will be exist in `/tmp/result.sql`.
 
-## 感谢 Thanks
-
-感谢 [mybatis-mapper-2-sql](https://github.com/actiontech/mybatis-mapper-2-sql) / [sqle](https://github.com/actiontech/sqle)
-
-Thanks to [mybatis-mapper-2-sql](https://github.com/actiontech/mybatis-mapper-2-sql) / [sqle](https://github.com/actiontech/sqle)
-
 ## 样例 Sample
 
 ### MyBatis
 
 [mapper-demo.xml](./test_data/mapper-demo.xml) 将转化为 `result.sql`。
+
 [mapper-demo.xml](./test_data/mapper-demo.xml) will be converted to `result.sql`.
 
 **`result.sql`**
@@ -87,6 +82,7 @@ DELETE FROM TAB1 WHERE COLUMN1 = :? AND COLUMN2 = :?;
 ### iBATIS
 
 [sqlmap-demo.xml](./test_data/sqlmap-demo.xml) 将转化为 `result.sql`。
+
 [sqlmap-demo.xml](./test_data/sqlmap-demo.xml) will be converted to `result.sql`.
 
 **`result.sql`**
@@ -104,4 +100,17 @@ INSERT INTO __REPLACE_SCHEMA__.TAB1 (COLUMN1, COLUMN2, COLUMN3, COLUMN4, COLUMN5
 ```
 
 > 如果是 `MySQL` 模式，`:?` 改为 `@1`。
+
 > If under `MySQL` mode, `:?` will be replaced with `@1`.
+
+## 更新记录 ChangeLog
+
+见 [ChangeLog](ChangeLog.md)
+
+See in [ChangeLog](ChangeLog.md)
+
+## 感谢 Thanks
+
+感谢 [mybatis-mapper-2-sql](https://github.com/actiontech/mybatis-mapper-2-sql) / [sqle](https://github.com/actiontech/sqle)
+
+Thanks to [mybatis-mapper-2-sql](https://github.com/actiontech/mybatis-mapper-2-sql) / [sqle](https://github.com/actiontech/sqle)

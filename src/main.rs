@@ -20,7 +20,7 @@ use scan::xml_scanner::*;
 use xbatis::def::*;
 use xbatis::ibatis_parser::*;
 use xbatis::mybatis_parser::*;
-use xbatis::xml_parser::*;
+use xbatis::xbatis_parser::*;
 
 /// 主函数，解析参数并调用后续函数
 fn main() {
