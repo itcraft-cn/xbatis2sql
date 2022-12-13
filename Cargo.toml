@@ -9,7 +9,7 @@ repository = "https://github.com/hellyguo/xbatis2sql"
 license = "Apache-2.0"
 readme = "README.md"
 description = "collect sql statements from iBATIS sqlmap files/MyBatis mapper files"
-categories = ["command-line-interface", "command-line-utilities"]
+categories = ["command-line-utilities"]
 documentation = "https://docs.rs/crate/xbatis2sql/latest"
 keywords = ["iBATIS", "MyBatis", "SQL", "Parser", "XML"]
 
