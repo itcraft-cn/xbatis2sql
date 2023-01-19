@@ -4,6 +4,12 @@
 
 `xbatis2sql`, collect sql statements from iBATIS sqlmap files/MyBatis mapper files.
 
+## 安装方法 Install
+
+```shell
+cargo install xbatis2sql
+```
+
 ## 用法 Usage
 
 ```verilog
