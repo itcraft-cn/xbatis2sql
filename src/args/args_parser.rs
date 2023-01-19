@@ -91,9 +91,7 @@ pub fn check_args() -> Args {
     let args: Vec<String> = env::args().collect();
     match opts.parse(&args[1..]) {
         Ok(m) => return actual_check_args(opts, m),
-        Err(f) => {
-            fail!(f, opts);
-        }
+        Err(f) => fail!(f, opts),
     };
 }
 
@@ -133,22 +131,19 @@ fn actual_check_args(opts: Options, matches: Matches) -> Args {
         fail!("must define the output directory", opts);
     }
     let db_type = DbType::from(o_db_type.unwrap().to_ascii_lowercase().as_str());
-    return choose(db_type, opts, mode_ibatis, src_dir, output_dir);
+    match db_type {
+        DbType::Unknown => fail!("must choose db type in oracle or mysql", opts),
+        _ => return gen_args(opts, db_type, mode_ibatis, src_dir, output_dir),
+    }
 }
 
-fn choose(
-    db_type: DbType,
+fn gen_args(
     opts: Options,
+    db_type: DbType,
     mode_ibatis: bool,
     src_dir: Option<String>,
     output_dir: Option<String>,
 ) -> Args {
-    match db_type {
-        DbType::Unknown => {
-            fail!("must choose db type in oracle or mysql", opts);
-        }
-        _ => {}
-    }
     let mode;
     if mode_ibatis {
         mode = XBatisMode::IBatis
