@@ -89,12 +89,25 @@ impl Args {
 pub fn check_args() -> Args {
     let opts = build_opts();
     let args: Vec<String> = env::args().collect();
-    let matches = match opts.parse(&args[1..]) {
-        Ok(m) => m,
-        Err(f) => {
-            fail!(f, opts);
-        }
+    match opts.parse(&args[1..]) {
+        Ok(m) => return actual_check_args(opts, m),
+        Err(f) => fail!(f, opts),
     };
+}
+
+fn build_opts() -> Options {
+    let mut opts = Options::new();
+    opts.optflag("i", "ibatis", "try to parse iBATIS sqlmap files");
+    opts.optflag("m", "mybatis", "try to parse MyBatis mapper files");
+    opts.optopt("t", "type", "db type", "DB");
+    opts.optopt("s", "src", "source directory", "SRC");
+    opts.optopt("o", "output", "output directory", "OUTPUT");
+    opts.optflag("v", "version", "show version information");
+    opts.optflag("h", "help", "print this help menu");
+    return opts;
+}
+
+fn actual_check_args(opts: Options, matches: Matches) -> Args {
     let help = matches.opt_present("h");
     let version = matches.opt_present("v");
     let mode_ibatis = matches.opt_present("i");
@@ -119,40 +132,25 @@ pub fn check_args() -> Args {
     }
     let db_type = DbType::from(o_db_type.unwrap().to_ascii_lowercase().as_str());
     match db_type {
-        DbType::Unknown => {
-            fail!("must choose db type in oracle or mysql", opts);
-        }
-        _ => {}
-    }
-    if mode_ibatis {
-        return Args::new(
-            XBatisMode::IBatis,
-            db_type,
-            &src_dir.unwrap(),
-            &output_dir.unwrap(),
-            opts,
-        );
-    } else {
-        return Args::new(
-            XBatisMode::MyBatis,
-            db_type,
-            &src_dir.unwrap(),
-            &output_dir.unwrap(),
-            opts,
-        );
+        DbType::Unknown => fail!("must choose db type in oracle or mysql", opts),
+        _ => return gen_args(opts, db_type, mode_ibatis, src_dir, output_dir),
     }
 }
 
-fn build_opts() -> Options {
-    let mut opts = Options::new();
-    opts.optflag("i", "ibatis", "try to parse iBATIS sqlmap files");
-    opts.optflag("m", "mybatis", "try to parse MyBatis mapper files");
-    opts.optopt("t", "type", "db type", "DB");
-    opts.optopt("s", "src", "source directory", "SRC");
-    opts.optopt("o", "output", "output directory", "OUTPUT");
-    opts.optflag("v", "version", "show version information");
-    opts.optflag("h", "help", "print this help menu");
-    return opts;
+fn gen_args(
+    opts: Options,
+    db_type: DbType,
+    mode_ibatis: bool,
+    src_dir: Option<String>,
+    output_dir: Option<String>,
+) -> Args {
+    let mode;
+    if mode_ibatis {
+        mode = XBatisMode::IBatis
+    } else {
+        mode = XBatisMode::MyBatis
+    }
+    return Args::new(mode, db_type, &src_dir.unwrap(), &output_dir.unwrap(), opts);
 }
 
 /// 打印使用方法

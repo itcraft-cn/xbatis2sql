@@ -53,18 +53,10 @@ pub trait Parser {
             match e {
                 Ok(XmlEvent::StartElement {
                     name, attributes, ..
-                }) => {
-                    self.parse_start_element(name, attributes, &mut state);
-                }
-                Ok(XmlEvent::EndElement { name }) => {
-                    self.parse_end_element(name, &mut state);
-                }
-                Ok(XmlEvent::CData(content)) => {
-                    self.fill_xml_content(&mut state, content);
-                }
-                Ok(XmlEvent::Characters(content)) => {
-                    self.fill_xml_content(&mut state, content);
-                }
+                }) => self.parse_start_element(name, attributes, &mut state),
+                Ok(XmlEvent::EndElement { name }) => self.parse_end_element(name, &mut state),
+                Ok(XmlEvent::CData(content)) => self.fill_xml_content(&mut state, content),
+                Ok(XmlEvent::Characters(content)) => self.fill_xml_content(&mut state, content),
                 Err(e) => {
                     warn!("Error: {}", e);
                     break;
