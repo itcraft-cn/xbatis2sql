@@ -18,7 +18,7 @@ pub fn create_ibatis_parser(dialect_type: DialectType) -> IBatisParser {
     }
     return IBatisParser {
         dialect_type,
-        re_vec: re_vec,
+        re_vec,
     };
 }
 
