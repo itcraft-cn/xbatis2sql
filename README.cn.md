@@ -1,16 +1,16 @@
 # xbatis2sql
 
-[中文说明](README.cn.md)
+[ReadMe in English](README.md)
 
-`xbatis2sql`, collect sql statements from iBATIS sqlmap files/MyBatis mapper files.
+`xbatis2sql`，用来抽取散落在各个 `xml` 文件中的 `sql`，供集中进行后续处理。
 
-## Install
+## 安装方法
 
 ```shell
 cargo install xbatis2sql
 ```
 
-## Usage
+## 用法
 
 ```verilog
 # xbatis2sql -h
@@ -31,13 +31,13 @@ Options:
 xbatis2sql -i -t Oracle -s /java/use_ibatis_proj/src -o /tmp
 ```
 
-or
+或
 
 ```shell
 xbatis2sql --ibatis --type Oracle --src /java/use_ibatis_proj/src --output /tmp
 ```
 
-After executing, the result will be exist in `/tmp/result.sql`.
+执行后可获得文件： `/tmp/result.sql`。
 
 ### MyBatis
 
@@ -45,19 +45,19 @@ After executing, the result will be exist in `/tmp/result.sql`.
 xbatis2sql -m -t Oracle -s /java/use_mybatis_proj/src -o /tmp
 ```
 
-or
+或
 
 ```shell
 xbatis2sql --mybatis --type Oracle --src /java/use_mybatis_proj/src --output /tmp
 ```
 
-After executing, the result will be exist in `/tmp/result.sql`.
+执行后可获得文件： `/tmp/result.sql`。
 
-## Sample
+## 样例
 
 ### MyBatis
 
-[mapper-demo.xml](./test_data/mapper-demo.xml) will be converted to `result.sql`.
+[mapper-demo.xml](./test_data/mapper-demo.xml) 将转化为 `result.sql`。
 
 **`result.sql`**
 
@@ -81,7 +81,7 @@ DELETE FROM TAB1 WHERE COLUMN1 = :? AND COLUMN2 = :?;
 
 ### iBATIS
 
-[sqlmap-demo.xml](./test_data/sqlmap-demo.xml) will be converted to `result.sql`.
+[sqlmap-demo.xml](./test_data/sqlmap-demo.xml) 将转化为 `result.sql`。
 
 **`result.sql`**
 
@@ -97,12 +97,12 @@ DELETE FROM __REPLACE_SCHEMA__.TAB1 WHERE COLUMN1 = :?;
 INSERT INTO __REPLACE_SCHEMA__.TAB1 (COLUMN1, COLUMN2, COLUMN3, COLUMN4, COLUMN5) VALUES (:?, :?, :?, :?, :?);
 ```
 
-> If under `MySQL` mode, `:?` will be replaced with `@1`.
+> 如果是 `MySQL` 模式，`:?` 改为 `@1`。
 
-## ChangeLog
+## 更新记录
 
-See in [ChangeLog](ChangeLog.md)
+见 [ChangeLog](ChangeLog.md)
 
-## Thanks
+## 感谢
 
-Thanks to [mybatis-mapper-2-sql](https://github.com/actiontech/mybatis-mapper-2-sql) / [sqle](https://github.com/actiontech/sqle)
+感谢 [mybatis-mapper-2-sql](https://github.com/actiontech/mybatis-mapper-2-sql) / [sqle](https://github.com/actiontech/sqle)
