@@ -9,7 +9,7 @@ const CRLF: [u8; 1] = [0x0a];
 
 pub fn save(output_dir: &String, sql_store: Vec<String>) {
     info!(
-        "write to {:?}/resut.sql, size: {:?}",
+        "write to {}/result.sql, size: {}",
         output_dir,
         sql_store.len()
     );
