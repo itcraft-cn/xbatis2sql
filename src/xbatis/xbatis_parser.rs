@@ -195,7 +195,10 @@ pub trait Parser {
                 let mut sql = stat.sql.clone();
                 for key in &stat.include_keys {
                     let sql_part = sql_part_map.get_key_value(key).unwrap();
+                    // TODO: support multiple include_keys
+                    info!("{}:::-->{}", sql_part.0, sql_part.1.sql);
                     sql = replace_included_sql(&sql, &sql_part.0, &sql_part.1.sql);
+                    info!("{}", sql);
                 }
                 self.clear_and_push(sql_store, &sql);
             } else {

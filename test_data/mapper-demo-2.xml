@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.erayt.rcs.pub.packet.dao.mappers.PacketValidatDao">
+
+    <resultMap id="BaseResultMap" type="com.erayt.rcs.pub.packet.dao.domains.eo.PacketValidatEo">
+        <result property="dataTypeValidatId" column="DATA_TYPE_VALIDAT_ID"/>
+        <result property="dataTypeId" column="DATA_TYPE_ID"/>
+        <result property="dataTypeCode" column="DATA_TYPE_CODE"/>
+        <result property="dataTypeName" column="DATA_TYPE_NAME"/>
+        <result property="dataTypeLocalName" column="DATA_TYPE_LOCAL_NAME"/>
+        <result property="fieldId" column="FIELD_ID"/>
+        <result property="field" column="FIELD"/>
+        <result property="fieldName" column="FIELD_NAME"/>
+        <result property="fieldLocalName" column="FIELD_LOCAL_NAME"/>
+        <result property="fieldIsDisplay" column="FIELD_IS_DISPLAY"/>
+        <result property="validationRuleType" column="VALIDATION_RULE_TYPE"/>
+        <result property="validationRule" column="VALIDATION_RULE"/>
+        <result property="validationExpresstion" column="VALIDATION_EXPRESSTION"/>
+        <result property="errorCode" column="ERROR_CODE"/>
+        <result property="sort" column="SORT"/>
+        <result property="status" column="STATUS"/>
+        <result property="comments" column="COMMENTS"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        DATA_TYPE_VALIDAT_ID,
+        DATA_TYPE_ID,
+        DATA_TYPE_CODE,
+        DATA_TYPE_NAME,
+        DATA_TYPE_LOCAL_NAME,
+        FIELD_ID,
+        FIELD,
+        FIELD_NAME,
+        FIELD_LOCAL_NAME,
+        FIELD_IS_DISPLAY,
+        VALIDATION_RULE_TYPE,
+        VALIDATION_RULE,
+        VALIDATION_EXPRESSTION,
+        ERROR_CODE,
+        SORT,
+        STATUS,
+        COMMENTS
+    </sql>
+
+    <sql id="querySql">
+        SELECT
+        <include refid="Base_Column_List"/>
+        from
+        PUB_INFDATA_PACKET_VALIDAT
+        <where>
+            <if test="dataTypeValidatId != null and dataTypeValidatId != ''">AND DATA_TYPE_VALIDAT_ID = #{dataTypeValidatId}</if>
+            <if test="dataTypeId != null and dataTypeId != ''">AND DATA_TYPE_ID = #{dataTypeId}</if>
+            <if test="dataTypeCode != null and dataTypeCode != ''">AND DATA_TYPE_CODE = #{dataTypeCode}</if>
+            <if test="dataTypeName != null and dataTypeName != ''">AND DATA_TYPE_NAME = #{dataTypeName}</if>
+            <if test="dataTypeLocalName != null and dataTypeLocalName != ''">AND DATA_TYPE_LOCAL_NAME = #{dataTypeLocalName}</if>
+            <if test="fieldId != null and fieldId != ''">AND FIELD_ID = #{fieldId}</if>
+            <if test="field != null and field != ''">AND FIELD = #{field}</if>
+            <if test="fieldName != null and fieldName != ''">AND FIELD_NAME = #{fieldName}</if>
+            <if test="fieldLocalName != null and fieldLocalName != ''">AND FIELD_LOCAL_NAME = #{fieldLocalName}</if>
+            <if test="fieldIsDisplay != null and fieldIsDisplay != ''">AND FIELD_IS_DISPLAY = #{fieldIsDisplay}</if>
+            <if test="validationRuleType != null and validationRuleType != ''">AND VALIDATION_RULE_TYPE = #{validationRuleType}</if>
+            <if test="validationRule != null and validationRule != ''">AND VALIDATION_RULE = #{validationRule}</if>
+            <if test="validationExpresstion != null and validationExpresstion != ''">AND VALIDATION_EXPRESSTION = #{validationExpresstion}</if>
+            <if test="errorCode != null and errorCode != ''">AND ERROR_CODE = #{errorCode}</if>
+            <if test="sort != null and sort != ''">AND SORT = #{sort}</if>
+            <if test="status != null and status != ''">AND STATUS = #{status}</if>
+            <if test="comments != null and comments != ''">AND COMMENTS = #{comments}</if>
+            <if test="keyword != null">AND
+                (
+                FIELD like concat('%', concat(#{keyword}, '%'))
+                OR FIELD_NAME like concat('%', concat(#{keyword}, '%'))
+                OR FIELD_LOCAL_NAME like concat('%', concat(#{keyword}, '%'))
+                )
+            </if>
+        </where>
+        order by SORT
+    </sql>
+
+    <select id="getOne" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from
+        PUB_INFDATA_PACKET_VALIDAT
+        where
+        DATA_TYPE_VALIDAT_ID = #{dataTypeValidatId}
+    </select>
+
+    <select id="queryList" resultMap="BaseResultMap">
+        <include refid="querySql"/>
+    </select>
+
+    <select id="queryPage" resultMap="BaseResultMap">
+        <include refid="querySql"/>
+    </select>
+
+    <delete id="delete">
+        delete from PUB_INFDATA_PACKET_VALIDAT where DATA_TYPE_VALIDAT_ID = #{dataTypeValidatId}
+    </delete>
+
+    <insert id="insert">
+        insert into PUB_INFDATA_PACKET_VALIDAT
+        (
+        <include refid="Base_Column_List"/>
+        )
+        values (
+        #{dataTypeValidatId},
+        #{dataTypeId},
+        #{dataTypeCode},
+        #{dataTypeName},
+        #{dataTypeLocalName},
+        #{fieldId},
+        #{field},
+        #{fieldName},
+        #{fieldLocalName},
+        #{fieldIsDisplay},
+        #{validationRuleType},
+        #{validationRule},
+        #{validationExpresstion},
+        #{errorCode},
+        #{sort},
+        #{status},
+        #{comments}
+        )
+    </insert>
+
+    <update id="update">
+        update PUB_INFDATA_PACKET_VALIDAT
+        <set>
+            <if test="dataTypeId != null">DATA_TYPE_ID = #{dataTypeId},</if>
+            <if test="dataTypeCode != null">DATA_TYPE_CODE = #{dataTypeCode},</if>
+            <if test="dataTypeName != null">DATA_TYPE_NAME = #{dataTypeName},</if>
+            <if test="dataTypeLocalName != null">DATA_TYPE_LOCAL_NAME = #{dataTypeLocalName},</if>
+            <if test="fieldId != null">FIELD_ID = #{fieldId},</if>
+            <if test="field != null">FIELD = #{field},</if>
+            <if test="fieldName != null">FIELD_NAME = #{fieldName},</if>
+            <if test="fieldLocalName != null">FIELD_LOCAL_NAME = #{fieldLocalName},</if>
+            <if test="fieldIsDisplay != null">FIELD_IS_DISPLAY = #{fieldIsDisplay},</if>
+            <if test="validationRuleType != null">VALIDATION_RULE_TYPE = #{validationRuleType},</if>
+            <if test="validationRule != null">VALIDATION_RULE = #{validationRule},</if>
+            <if test="validationExpresstion != null">VALIDATION_EXPRESSTION = #{validationExpresstion},</if>
+            <if test="errorCode != null">ERROR_CODE = #{errorCode},</if>
+            <if test="sort != null">SORT = #{sort},</if>
+            <if test="status != null">STATUS = #{status},</if>
+            <if test="comments != null">COMMENTS = #{comments},</if>
+        </set>
+        where
+        DATA_TYPE_VALIDAT_ID = #{dataTypeValidatId}
+    </update>
+
+    <delete id="deleteByDataTypeId">
+        delete from PUB_INFDATA_PACKET_VALIDAT where DATA_TYPE_ID = #{dataTypeId}
+    </delete>
+
+</mapper>
