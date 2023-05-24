@@ -18,7 +18,7 @@ pub fn create_mybatis_parser(dialect_type: DialectType) -> MyBatisParser {
     }
     return MyBatisParser {
         dialect_type,
-        re_vec: re_vec,
+        re_vec,
     };
 }
 
