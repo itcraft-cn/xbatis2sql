@@ -37,6 +37,8 @@ fn create_replcements(dialect_type: &DialectType) -> Vec<RegexReplacement> {
         RegexReplacement::new("WHERE[ ]+OR[ ]+", "WHERE "),
         RegexReplacement::new(",[ ]+WHERE", " WHERE"),
         RegexReplacement::new("[ ]*,[ ]*\\)", ")"),
+        RegexReplacement::new("AND[ ]*$", ""),
+        RegexReplacement::new("OR[ ]*$", ""),
         RegexReplacement::new(",$", ""),
     ];
 }
