@@ -1,6 +1,6 @@
 # xbatis2sql
 
-[中文说明](README.cn.md)
+[Chinese version](README.cn.md)
 
 `xbatis2sql`, collect sql statements from iBATIS sqlmap files/MyBatis mapper files.
 
