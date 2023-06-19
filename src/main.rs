@@ -50,16 +50,16 @@ fn parse_xbatis_xml(mode: XBatisMode, db_type: DbType, src_dir: &String, output_
 
 fn choose_parser(mode: XBatisMode, dialect_type: DialectType) -> Box<dyn Parser> {
     match mode {
-        IBatis => return Box::new(create_ibatis_parser(dialect_type)),
-        MyBatis => return Box::new(create_mybatis_parser(dialect_type)),
+        IBatis => Box::new(create_ibatis_parser(dialect_type)),
+        MyBatis => Box::new(create_mybatis_parser(dialect_type)),
         _ => panic!("not supported mode"),
     }
 }
 
 fn convert(db_type: DbType) -> DialectType {
-    return match db_type {
+    match db_type {
         DbType::Oracle => DialectType::Oracle,
         DbType::MySQL => DialectType::MySQL,
         _ => panic!("unknown dialect type"),
-    };
+    }
 }

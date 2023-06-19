@@ -20,7 +20,7 @@ pub fn save(output_dir: &String, sql_store: Vec<String>) {
     }
     let mut f = r.unwrap();
     for sql in sql_store {
-        write2file(&mut f, &sql.as_bytes(), output_dir);
+        write2file(&mut f, sql.as_bytes(), output_dir);
         write2file(&mut f, &CRLF, output_dir);
     }
     write2file(&mut f, &CRLF, output_dir);

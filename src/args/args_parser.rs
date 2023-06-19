@@ -45,23 +45,23 @@ impl Args {
     fn new(
         mode: XBatisMode,
         db_type: DbType,
-        src_dir: &String,
-        output_dir: &String,
+        src_dir: &str,
+        output_dir: &str,
         opts: Options,
     ) -> Self {
-        return Args {
+        Args {
             mode,
             db_type,
-            src_dir: src_dir.clone(),
-            output_dir: output_dir.clone(),
+            src_dir: src_dir.to_owned(),
+            output_dir: output_dir.to_owned(),
             fast_fail: false,
             show_version: false,
             opts,
-        };
+        }
     }
 
     fn fail(opts: Options) -> Self {
-        return Args {
+        Args {
             mode: XBatisMode::NotSupported,
             db_type: DbType::Unknown,
             src_dir: String::from(""),
@@ -69,11 +69,11 @@ impl Args {
             fast_fail: true,
             show_version: false,
             opts,
-        };
+        }
     }
 
     fn help(opts: Options) -> Self {
-        return Args {
+        Args {
             mode: XBatisMode::NotSupported,
             db_type: DbType::Unknown,
             src_dir: String::from(""),
@@ -81,7 +81,7 @@ impl Args {
             fast_fail: false,
             show_version: true,
             opts,
-        };
+        }
     }
 }
 
@@ -90,9 +90,9 @@ pub fn check_args() -> Args {
     let opts = build_opts();
     let args: Vec<String> = env::args().collect();
     match opts.parse(&args[1..]) {
-        Ok(m) => return actual_check_args(opts, m),
+        Ok(m) => actual_check_args(opts, m),
         Err(f) => fail!(f, opts),
-    };
+    }
 }
 
 fn build_opts() -> Options {
@@ -104,7 +104,7 @@ fn build_opts() -> Options {
     opts.optopt("o", "output", "output directory", "OUTPUT");
     opts.optflag("v", "version", "show version information");
     opts.optflag("h", "help", "print this help menu");
-    return opts;
+    opts
 }
 
 fn actual_check_args(opts: Options, matches: Matches) -> Args {
@@ -133,7 +133,7 @@ fn actual_check_args(opts: Options, matches: Matches) -> Args {
     let db_type = DbType::from(o_db_type.unwrap().to_ascii_lowercase().as_str());
     match db_type {
         DbType::Unknown => fail!("must choose db type in oracle or mysql", opts),
-        _ => return gen_args(opts, db_type, mode_ibatis, src_dir, output_dir),
+        _ => gen_args(opts, db_type, mode_ibatis, src_dir, output_dir),
     }
 }
 
@@ -144,13 +144,12 @@ fn gen_args(
     src_dir: Option<String>,
     output_dir: Option<String>,
 ) -> Args {
-    let mode;
-    if mode_ibatis {
-        mode = XBatisMode::IBatis
+    let mode = if mode_ibatis {
+        XBatisMode::IBatis
     } else {
-        mode = XBatisMode::MyBatis
-    }
-    return Args::new(mode, db_type, &src_dir.unwrap(), &output_dir.unwrap(), opts);
+        XBatisMode::MyBatis
+    };
+    Args::new(mode, db_type, &src_dir.unwrap(), &output_dir.unwrap(), opts)
 }
 
 /// 打印使用方法

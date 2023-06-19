@@ -16,10 +16,10 @@ pub fn create_ibatis_parser(dialect_type: DialectType) -> IBatisParser {
     {
         re_vec = create_replcements(&dialect_type);
     }
-    return IBatisParser {
+    IBatisParser {
         dialect_type,
         re_vec,
-    };
+    }
 }
 
 fn create_replcements(dialect_type: &DialectType) -> Vec<RegexReplacement> {
@@ -27,7 +27,7 @@ fn create_replcements(dialect_type: &DialectType) -> Vec<RegexReplacement> {
         DialectType::Oracle => " :? ",
         DialectType::MySQL => " @1 ",
     };
-    return vec![
+    vec![
         RegexReplacement::new("[\t ]?--[^\n]*\n", " "),
         RegexReplacement::new("[\r\n\t ]+", " "),
         RegexReplacement::new("\\$\\{[^${]+\\}", "__REPLACE_SCHEMA__"),
@@ -40,7 +40,7 @@ fn create_replcements(dialect_type: &DialectType) -> Vec<RegexReplacement> {
         RegexReplacement::new("AND[ ]*$", ""),
         RegexReplacement::new("OR[ ]*$", ""),
         RegexReplacement::new(",$", ""),
-    ];
+    ]
 }
 
 pub struct IBatisParser {
@@ -53,15 +53,15 @@ impl Parser for IBatisParser {
         self.dialect_type = dialect_type;
     }
 
-    fn detect_match(&self, file: &String) -> bool {
-        return self.detect_match_with_regex(file, &RE);
+    fn detect_match(&self, file: &str) -> bool {
+        self.detect_match_with_regex(file, &RE)
     }
 
     fn ex_parse_start_element(
         &self,
         _name: OwnedName,
-        _element_name: &String,
-        attributes: &Vec<OwnedAttribute>,
+        _element_name: &str,
+        attributes: &[OwnedAttribute],
         state: &mut XmlParsedState,
     ) {
         if state.in_statement {
@@ -76,12 +76,12 @@ impl Parser for IBatisParser {
     fn ex_parse_end_element(
         &self,
         _name: OwnedName,
-        _element_name: &String,
+        _element_name: &str,
         _state: &mut XmlParsedState,
     ) {
     }
 
-    fn clear_and_push(&self, sql_store: &mut Vec<String>, origin_sql: &String) {
+    fn clear_and_push(&self, sql_store: &mut Vec<String>, origin_sql: &str) {
         self.loop_clear_and_push(sql_store, &self.re_vec, origin_sql)
     }
 }

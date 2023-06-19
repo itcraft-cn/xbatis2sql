@@ -17,7 +17,7 @@ pub trait Parser {
         for file in files {
             self.check_and_parse(file, &mut sql_store);
         }
-        return sql_store;
+        sql_store
     }
 
     fn check_and_parse(&self, file: &String, sql_store: &mut Vec<String>) {
@@ -27,14 +27,14 @@ pub trait Parser {
         }
     }
 
-    fn detect_match(&self, file: &String) -> bool;
+    fn detect_match(&self, file: &str) -> bool;
 
-    fn detect_match_with_regex(&self, file: &String, re: &Regex) -> bool {
+    fn detect_match_with_regex(&self, file: &str, re: &Regex) -> bool {
         let result = fs::read_to_string(file);
-        if result.is_ok() {
-            return re.is_match(result.unwrap().as_str());
+        if let Ok(content) = result {
+            re.is_match(content.as_str())
         } else {
-            return false;
+            false
         }
     }
 
@@ -123,8 +123,8 @@ pub trait Parser {
     fn ex_parse_start_element(
         &self,
         name: OwnedName,
-        element_name: &String,
-        attributes: &Vec<OwnedAttribute>,
+        element_name: &str,
+        attributes: &[OwnedAttribute],
         state: &mut XmlParsedState,
     );
 
@@ -143,12 +143,7 @@ pub trait Parser {
         }
     }
 
-    fn ex_parse_end_element(
-        &self,
-        name: OwnedName,
-        element_name: &String,
-        state: &mut XmlParsedState,
-    );
+    fn ex_parse_end_element(&self, name: OwnedName, element_name: &str, state: &mut XmlParsedState);
 
     fn handle_end_sql_part(&self, mode: Mode, state: &mut XmlParsedState) {
         let sql_stat = SqlStatement::new(
@@ -197,7 +192,7 @@ pub trait Parser {
                     let sql_part = sql_part_map.get_key_value(key).unwrap();
                     // TODO: support multiple include_keys
                     info!("{}:::-->{}", sql_part.0, sql_part.1.sql);
-                    sql = replace_included_sql(&sql, &sql_part.0, &sql_part.1.sql);
+                    sql = replace_included_sql(&sql, sql_part.0, &sql_part.1.sql);
                     info!("{}", sql);
                 }
                 self.clear_and_push(sql_store, &sql);
@@ -211,13 +206,13 @@ pub trait Parser {
         }
     }
 
-    fn clear_and_push(&self, sql_store: &mut Vec<String>, origin_sql: &String);
+    fn clear_and_push(&self, sql_store: &mut Vec<String>, origin_sql: &str);
 
     fn loop_clear_and_push(
         &self,
         sql_store: &mut Vec<String>,
-        regex_replacements: &Vec<RegexReplacement>,
-        origin_sql: &String,
+        regex_replacements: &[RegexReplacement],
+        origin_sql: &str,
     ) {
         let mut sql = String::from(origin_sql.to_ascii_uppercase().trim());
         for regex_replacement in regex_replacements.iter() {
@@ -228,7 +223,7 @@ pub trait Parser {
 
     fn regex_clear_and_push(
         &self,
-        origin_sql: &String,
+        origin_sql: &str,
         regex_replacement: &RegexReplacement,
     ) -> String {
         return regex_replacement

@@ -41,10 +41,10 @@ pub struct SqlKey {
 
 impl SqlKey {
     pub fn empty() -> SqlKey {
-        return SqlKey {
+        SqlKey {
             key: String::from(""),
             sql: String::from(""),
-        };
+        }
     }
 }
 
@@ -68,7 +68,7 @@ impl SqlStatement {
         has_sql_key: bool,
         sql_key: SqlKey,
     ) -> Self {
-        return SqlStatement {
+        SqlStatement {
             mode,
             id,
             sql,
@@ -76,7 +76,7 @@ impl SqlStatement {
             include_keys,
             has_sql_key,
             sql_key,
-        };
+        }
     }
 }
 
@@ -123,7 +123,7 @@ pub struct XmlParsedState {
 impl XmlParsedState {
     /// 构建器，构造工厂
     pub fn new() -> Self {
-        return XmlParsedState {
+        XmlParsedState {
             in_statement: false,
             in_sql_key: false,
             in_loop: false,
@@ -141,7 +141,7 @@ impl XmlParsedState {
             statements: Vec::new(),
             sql_part_map: HashMap::new(),
             filename: String::from(""),
-        };
+        }
     }
 
     pub fn reset(&mut self) {
@@ -169,10 +169,10 @@ pub struct RegexReplacement {
 
 impl RegexReplacement {
     pub fn new(regex: &str, target: &str) -> Self {
-        return RegexReplacement {
+        RegexReplacement {
             regex: Regex::new(regex).unwrap(),
             target: String::from(target),
-        };
+        }
     }
 }
 

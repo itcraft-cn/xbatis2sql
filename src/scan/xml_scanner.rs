@@ -10,7 +10,7 @@ pub fn scan(files: &mut Vec<String>, dir: &String) {
 
 /// 判断是否是 `xml` 文件。是，攒入 `files`。
 fn check_if_xml_file(files: &mut Vec<String>, d: Result<walkdir::DirEntry, walkdir::Error>) {
-    if !d.is_ok() {
+    if d.is_err() {
         return;
     }
     let entry = d.unwrap();

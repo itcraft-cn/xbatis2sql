@@ -16,10 +16,10 @@ pub fn create_mybatis_parser(dialect_type: DialectType) -> MyBatisParser {
     {
         re_vec = create_replcements(&dialect_type);
     }
-    return MyBatisParser {
+    MyBatisParser {
         dialect_type,
         re_vec,
-    };
+    }
 }
 
 fn create_replcements(dialect_type: &DialectType) -> Vec<RegexReplacement> {
@@ -27,7 +27,7 @@ fn create_replcements(dialect_type: &DialectType) -> Vec<RegexReplacement> {
         DialectType::Oracle => " :? ",
         DialectType::MySQL => " @1 ",
     };
-    return vec![
+    vec![
         RegexReplacement::new("[\t ]?--[^\n]*\n", ""),
         RegexReplacement::new("[\r\n\t ]+", " "),
         RegexReplacement::new("#\\{[^#{]+\\}", placeholder),
@@ -39,7 +39,7 @@ fn create_replcements(dialect_type: &DialectType) -> Vec<RegexReplacement> {
         RegexReplacement::new("AND[ ]*$", ""),
         RegexReplacement::new("OR[ ]*$", ""),
         RegexReplacement::new(",$", ""),
-    ];
+    ]
 }
 
 pub struct MyBatisParser {
@@ -52,15 +52,15 @@ impl Parser for MyBatisParser {
         self.dialect_type = dialect_type;
     }
 
-    fn detect_match(&self, file: &String) -> bool {
-        return self.detect_match_with_regex(file, &RE);
+    fn detect_match(&self, file: &str) -> bool {
+        self.detect_match_with_regex(file, &RE)
     }
 
     fn ex_parse_start_element(
         &self,
         _name: OwnedName,
-        element_name: &String,
-        attributes: &Vec<OwnedAttribute>,
+        element_name: &str,
+        attributes: &[OwnedAttribute],
         state: &mut XmlParsedState,
     ) {
         if element_name == "set" {
@@ -90,18 +90,10 @@ impl Parser for MyBatisParser {
     fn ex_parse_end_element(
         &self,
         _name: OwnedName,
-        element_name: &String,
+        element_name: &str,
         state: &mut XmlParsedState,
     ) {
-        if element_name == "trim" {
-            let suffix;
-            {
-                suffix = &state.loop_def.suffix;
-            }
-            self.fill_content(state, suffix.clone());
-            state.in_loop = false;
-            state.loop_def.reset();
-        } else if element_name == "foreach" {
+        if element_name == "trim" || element_name == "foreach" {
             let suffix;
             {
                 suffix = &state.loop_def.suffix;
@@ -112,7 +104,7 @@ impl Parser for MyBatisParser {
         }
     }
 
-    fn clear_and_push(&self, sql_store: &mut Vec<String>, origin_sql: &String) {
+    fn clear_and_push(&self, sql_store: &mut Vec<String>, origin_sql: &str) {
         self.loop_clear_and_push(sql_store, &self.re_vec, origin_sql)
     }
 }
