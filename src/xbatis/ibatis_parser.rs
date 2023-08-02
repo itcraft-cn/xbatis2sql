@@ -53,6 +53,10 @@ impl Parser for IBatisParser {
         self.dialect_type = dialect_type;
     }
 
+    fn dialect_type(&self) -> &DialectType {
+        &self.dialect_type
+    }
+
     fn detect_match(&self, file: &str) -> bool {
         self.detect_match_with_regex(file, &RE)
     }

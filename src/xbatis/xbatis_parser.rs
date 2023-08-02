@@ -12,6 +12,8 @@ use xml::reader::*;
 pub trait Parser {
     fn setup_dialect_type(&mut self, dialect_type: DialectType);
 
+    fn dialect_type(&self) -> &DialectType;
+
     fn parse(&self, files: &Vec<String>) -> Vec<String> {
         let mut sql_store: Vec<String> = Vec::new();
         for file in files {
@@ -43,7 +45,11 @@ pub trait Parser {
     }
 
     fn read_xml(&self, filename: &String, sql_store: &mut Vec<String>) {
-        sql_store.push("-- ".to_string() + filename);
+        sql_store.push(compose_comment(
+            &comment_leading(self.dialect_type()),
+            &filename.to_string(),
+            &comment_tailing(self.dialect_type()).to_string(),
+        ));
         let file = fs::File::open(filename).unwrap();
         let buf = io::BufReader::new(file);
         let parser = EventReader::new(buf);
@@ -184,8 +190,14 @@ pub trait Parser {
         statements: &Vec<SqlStatement>,
         sql_part_map: &HashMap<String, SqlStatement>,
     ) {
+        let comment_leading = comment_leading2(self.dialect_type());
+        let comment_tailing = comment_tailing2(self.dialect_type());
         for stat in statements {
-            sql_store.push("--- ".to_string() + &stat.id);
+            sql_store.push(compose_comment(
+                &comment_leading.to_string(),
+                &String::from(&stat.id),
+                &comment_tailing.to_string(),
+            ));
             if stat.has_include {
                 let mut sql = stat.sql.clone();
                 for key in &stat.include_keys {
@@ -200,7 +212,11 @@ pub trait Parser {
                 self.clear_and_push(sql_store, &stat.sql);
             }
             if stat.has_sql_key {
-                sql_store.push("--- ".to_string() + &stat.sql_key.key);
+                sql_store.push(compose_comment(
+                    &comment_leading,
+                    &stat.sql_key.key,
+                    &comment_tailing,
+                ));
                 self.clear_and_push(sql_store, &stat.sql_key.sql);
             }
         }
@@ -231,4 +247,36 @@ pub trait Parser {
             .replace_all(origin_sql, regex_replacement.target.as_str())
             .to_string();
     }
+}
+
+fn comment_leading(dialet_type: &DialectType) -> String {
+    match dialet_type {
+        DialectType::Oracle => "-- ".to_string(),
+        DialectType::MySQL => "/* ".to_string(),
+    }
+}
+
+fn comment_leading2(dialet_type: &DialectType) -> String {
+    match dialet_type {
+        DialectType::Oracle => "--- ".to_string(),
+        DialectType::MySQL => "/** ".to_string(),
+    }
+}
+
+fn comment_tailing(dialet_type: &DialectType) -> String {
+    match dialet_type {
+        DialectType::Oracle => "".to_string(),
+        DialectType::MySQL => " */".to_string(),
+    }
+}
+
+fn comment_tailing2(dialet_type: &DialectType) -> String {
+    match dialet_type {
+        DialectType::Oracle => "--- ".to_string(),
+        DialectType::MySQL => " */".to_string(),
+    }
+}
+
+fn compose_comment(leading: &String, line: &String, trailing: &String) -> String {
+    return format!("{}{}{}", leading, line, trailing);
 }
