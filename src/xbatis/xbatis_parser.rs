@@ -48,7 +48,7 @@ pub trait Parser {
         sql_store.push(compose_comment(
             &comment_leading(self.dialect_type()),
             &filename.to_string(),
-            &comment_tailing(self.dialect_type()).to_string(),
+            &comment_tailing(self.dialect_type()),
         ));
         let file = fs::File::open(filename).unwrap();
         let buf = io::BufReader::new(file);
@@ -278,5 +278,5 @@ fn comment_tailing2(dialet_type: &DialectType) -> String {
 }
 
 fn compose_comment(leading: &String, line: &String, trailing: &String) -> String {
-    return format!("{}{}{}", leading, line, trailing);
+    format!("{}{}{}", leading, line, trailing)
 }
