@@ -24,8 +24,8 @@ pub fn create_ibatis_parser(dialect_type: DialectType) -> IBatisParser {
 
 fn create_replcements(dialect_type: &DialectType) -> Vec<RegexReplacement> {
     let placeholder = match dialect_type {
-        DialectType::Oracle => " :? ",
-        DialectType::MySQL => " @1 ",
+        DialectType::Oracle => ":?",
+        DialectType::MySQL => "@1",
     };
     vec![
         RegexReplacement::new("[\t ]?--[^\n]*\n", " "),

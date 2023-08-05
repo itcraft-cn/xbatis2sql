@@ -48,7 +48,7 @@
         SELECT
         <include refid="Base_Column_List"/>
         from
-        PUB_INFDATA_PACKET_VALIDAT
+        ${schema}.PUB_INFDATA_PACKET_VALIDAT
         <where>
             <if test="dataTypeValidatId != null and dataTypeValidatId != ''">AND DATA_TYPE_VALIDAT_ID = #{dataTypeValidatId}</if>
             <if test="dataTypeId != null and dataTypeId != ''">AND DATA_TYPE_ID = #{dataTypeId}</if>
@@ -82,7 +82,7 @@
         select
         <include refid="Base_Column_List"/>
         from
-        PUB_INFDATA_PACKET_VALIDAT
+        ${schema}.PUB_INFDATA_PACKET_VALIDAT
         where
         DATA_TYPE_VALIDAT_ID = #{dataTypeValidatId}
     </select>
@@ -96,11 +96,11 @@
     </select>
 
     <delete id="delete">
-        delete from PUB_INFDATA_PACKET_VALIDAT where DATA_TYPE_VALIDAT_ID = #{dataTypeValidatId}
+        delete from ${schema}.PUB_INFDATA_PACKET_VALIDAT where DATA_TYPE_VALIDAT_ID = #{dataTypeValidatId}
     </delete>
 
     <insert id="insert">
-        insert into PUB_INFDATA_PACKET_VALIDAT
+        insert into ${schema}.PUB_INFDATA_PACKET_VALIDAT
         (
         <include refid="Base_Column_List"/>
         )
@@ -126,7 +126,7 @@
     </insert>
 
     <update id="update">
-        update PUB_INFDATA_PACKET_VALIDAT
+        update ${schema}.PUB_INFDATA_PACKET_VALIDAT
         <set>
             <if test="dataTypeId != null">DATA_TYPE_ID = #{dataTypeId},</if>
             <if test="dataTypeCode != null">DATA_TYPE_CODE = #{dataTypeCode},</if>
@@ -150,7 +150,7 @@
     </update>
 
     <delete id="deleteByDataTypeId">
-        delete from PUB_INFDATA_PACKET_VALIDAT where DATA_TYPE_ID = #{dataTypeId}
+        delete from ${schema}.PUB_INFDATA_PACKET_VALIDAT where DATA_TYPE_ID = #{dataTypeId}
     </delete>
 
 </mapper>

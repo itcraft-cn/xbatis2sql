@@ -24,12 +24,13 @@ pub fn create_mybatis_parser(dialect_type: DialectType) -> MyBatisParser {
 
 fn create_replcements(dialect_type: &DialectType) -> Vec<RegexReplacement> {
     let placeholder = match dialect_type {
-        DialectType::Oracle => " :? ",
-        DialectType::MySQL => " @1 ",
+        DialectType::Oracle => ":?",
+        DialectType::MySQL => "@1",
     };
     vec![
         RegexReplacement::new("[\t ]?--[^\n]*\n", ""),
         RegexReplacement::new("[\r\n\t ]+", " "),
+        RegexReplacement::new("\\$\\{[^${]+\\}\\.", "__REPLACE_SCHEMA__."),
         RegexReplacement::new("#\\{[^#{]+\\}", placeholder),
         RegexReplacement::new("\\$\\{[^${]+\\}", placeholder),
         RegexReplacement::new("WHERE[ ]+AND[ ]+", "WHERE "),
