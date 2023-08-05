@@ -1,6 +1,6 @@
 # xbatis2sql
 
-[ReadMe in English](README.md)
+[英文版本](README.md)
 
 `xbatis2sql`，用来抽取散落在各个 `xml` 文件中的 `sql`，供集中进行后续处理。
 
