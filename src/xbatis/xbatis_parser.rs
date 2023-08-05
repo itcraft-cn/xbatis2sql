@@ -76,11 +76,7 @@ pub trait Parser {
     fn fill_xml_content(&self, state: &mut XmlParsedState, content: String) {
         self.fill_content(state, content);
         if state.in_loop {
-            let separator;
-            {
-                separator = state.loop_def.separator.clone();
-            }
-            self.fill_content(state, separator);
+            self.fill_content(state, state.loop_def.separator.clone());
         }
     }
 
@@ -201,11 +197,18 @@ pub trait Parser {
             if stat.has_include {
                 let mut sql = stat.sql.clone();
                 for key in &stat.include_keys {
-                    let sql_part = sql_part_map.get_key_value(key).unwrap();
-                    // TODO: support multiple include_keys
-                    info!("{}:::-->{}", sql_part.0, sql_part.1.sql);
-                    sql = replace_included_sql(&sql, sql_part.0, &sql_part.1.sql);
-                    info!("{}", sql);
+                    let key_opt = sql_part_map.get_key_value(key);
+                    if key_opt.is_some() {
+                        let sql_part = key_opt.unwrap();
+                        info!("{}:::-->{}", sql_part.0, sql_part.1.sql);
+                        sql = replace_included_sql(&sql, sql_part.0, &sql_part.1.sql);
+                        info!("{}", sql);
+                    } else {
+                        warn!(
+                            "can not find include_key[{}] in statement[{}]",
+                            key, stat.id
+                        );
+                    }
                 }
                 self.clear_and_push(sql_store, &sql);
             } else {

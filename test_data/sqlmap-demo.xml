@@ -6,6 +6,25 @@
     , (select 1 from dual)
   </sql>
 
+	<sql id="sql_b">
+	a,b,c,d
+	</sql>
+
+	<sql id="sql_c">
+	e,f,g,h,i
+	</sql>
+
+  <select id="select">
+    SELECT 
+    <include refid="sql_b" />
+    ,
+    <include refid="sql_c" />
+		FROM ${schema}.tab1
+		WHERE column1 = 'balabala'
+    <isGreaterThan prepend="and" property="column2" compareValue="0">
+			column2 = #column2:NUMERIC#
+		</isGreaterThan>
+  </select>
   <select id="select">
     SELECT COUNT(1)
     <include refid="sql_a" />

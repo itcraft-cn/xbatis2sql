@@ -6,6 +6,14 @@
 		, (select 1 from dual)
 	</sql>
 
+	<sql id="sql_b">
+	a,b,c,d
+	</sql>
+
+	<sql id="sql_c">
+	e,f,g,h,i
+	</sql>
+
 	<insert id="insert">
 		<selectKey keyProperty="a">
 			select 1 from dual
@@ -15,6 +23,17 @@
 
 	<select id="select">
 		SELECT * FROM tab1 where column1 in
+		<foreach collection="list" index="index" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+	</select>
+
+	<select id="select1">
+		SELECT 
+		<include refid="sql_b"/>
+		,
+		<include refid="sql_c"/>
+		 FROM tab1 where column1 in
 		<foreach collection="list" index="index" item="item" open="(" separator="," close=")">
             #{item}
         </foreach>
