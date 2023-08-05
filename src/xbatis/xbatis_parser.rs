@@ -109,7 +109,7 @@ pub trait Parser {
         } else if element_name == "where" {
             state.sql_builder += " where ";
         } else if element_name == "include" {
-            info!("{}, {}", state.filename, state.current_id);
+            debug!("{}, {}", state.filename, state.current_id);
             search_matched_attr(&attributes, "refid", |attr| {
                 state.sql_builder += " __INCLUDE_ID_";
                 let refid = attr.value.clone();
@@ -190,7 +190,7 @@ pub trait Parser {
         let comment_leading = comment_leading2(self.dialect_type());
         let comment_tailing = comment_tailing2(self.dialect_type());
         for stat in statements {
-            info!("----------------------------------------------------------------");
+            debug!("----------------------------------------------------------------");
             sql_store.push(compose_comment(
                 &comment_leading.to_string(),
                 &String::from(&stat.id),
@@ -268,7 +268,7 @@ fn compose_sql_in_sql_part(
                 for key in &stat.include_keys {
                     let (new_sql, replace) =
                         replace_included_sql_by_key(&sql, stat, &empty_map, sql_part_map, key);
-                    info!("{} {} {} {} {}", stat.id, k, sql, new_sql, replace);
+                    debug!("{} {} {} {} {}", stat.id, k, sql, new_sql, replace);
                     if replace {
                         sql = new_sql.clone();
                         perfer_map.insert(String::from(k), new_sql.clone());
@@ -287,22 +287,22 @@ fn replace_included_sql_by_key(
     sql_part_map: &HashMap<String, SqlStatement>,
     key: &String,
 ) -> (String, bool) {
-    info!("key:::{}", key);
+    debug!("key:::{}", key);
     let perfer_opt = perfer_map.get(key);
     if perfer_opt.is_some() {
         let perfer_sql = perfer_opt.unwrap();
         let new_sql = replace_included_sql(&*sql, key, &perfer_sql);
-        info!("use perfer_sql: {}", perfer_sql);
-        info!("use new_sql: {}", new_sql);
+        debug!("use perfer_sql: {}", perfer_sql);
+        debug!("use new_sql: {}", new_sql);
         return (new_sql, true);
     }
     let key_opt = sql_part_map.get(key);
     if key_opt.is_some() {
         let sql_part = key_opt.unwrap();
-        info!("{}:::-->{}", key, sql_part.sql);
-        info!("{}:::-->{}", key, sql_part.has_include);
+        debug!("{}:::-->{}", key, sql_part.sql);
+        debug!("{}:::-->{}", key, sql_part.has_include);
         let new_sql = replace_included_sql(&*sql, key, &sql_part.sql);
-        info!("{}", new_sql);
+        debug!("{}", new_sql);
         return (new_sql, true);
     } else {
         warn!(
