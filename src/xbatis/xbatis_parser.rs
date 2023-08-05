@@ -109,6 +109,7 @@ pub trait Parser {
         } else if element_name == "where" {
             state.sql_builder += " where ";
         } else if element_name == "include" {
+            info!("{}, {}", state.filename, state.current_id);
             search_matched_attr(&attributes, "refid", |attr| {
                 state.sql_builder += " __INCLUDE_ID_";
                 let refid = attr.value.clone();
@@ -152,9 +153,9 @@ pub trait Parser {
             mode,
             state.current_id.clone(),
             state.sql_builder.to_string(),
-            false,
-            Vec::new(),
-            false,
+            state.has_include,
+            state.include_keys.clone(),
+            state.has_sql_key,
             SqlKey::empty(),
         );
         state
@@ -189,6 +190,7 @@ pub trait Parser {
         let comment_leading = comment_leading2(self.dialect_type());
         let comment_tailing = comment_tailing2(self.dialect_type());
         for stat in statements {
+            info!("----------------------------------------------------------------");
             sql_store.push(compose_comment(
                 &comment_leading.to_string(),
                 &String::from(&stat.id),
@@ -196,9 +198,15 @@ pub trait Parser {
             ));
             if stat.has_include {
                 let mut sql = stat.sql.clone();
+                let perfer_part_map = compose_sql_in_sql_part(&stat.include_keys, sql_part_map);
                 for key in &stat.include_keys {
-                    let (new_sql, replace) =
-                        replace_included_sql_by_key(&mut sql, stat, sql_part_map, key);
+                    let (new_sql, replace) = replace_included_sql_by_key(
+                        &mut sql,
+                        stat,
+                        &perfer_part_map,
+                        sql_part_map,
+                        key,
+                    );
                     if replace {
                         sql = new_sql;
                     }
@@ -245,17 +253,55 @@ pub trait Parser {
     }
 }
 
+fn compose_sql_in_sql_part(
+    include_keys: &Vec<String>,
+    sql_part_map: &HashMap<String, SqlStatement>,
+) -> HashMap<String, String> {
+    let empty_map = HashMap::new();
+    let mut perfer_map = HashMap::new();
+    for k in include_keys {
+        let sql_opt = sql_part_map.get(k);
+        if sql_opt.is_some() {
+            let stat: &SqlStatement = sql_opt.unwrap();
+            if stat.has_include {
+                let mut sql = stat.sql.clone();
+                for key in &stat.include_keys {
+                    let (new_sql, replace) =
+                        replace_included_sql_by_key(&sql, stat, &empty_map, sql_part_map, key);
+                    info!("{} {} {} {} {}", stat.id, k, sql, new_sql, replace);
+                    if replace {
+                        sql = new_sql.clone();
+                        perfer_map.insert(String::from(k), new_sql.clone());
+                    }
+                }
+            }
+        }
+    }
+    perfer_map
+}
+
 fn replace_included_sql_by_key(
-    sql: &mut String,
+    sql: &String,
     stat: &SqlStatement,
+    perfer_map: &HashMap<String, String>,
     sql_part_map: &HashMap<String, SqlStatement>,
     key: &String,
 ) -> (String, bool) {
-    let key_opt = sql_part_map.get_key_value(key);
+    info!("key:::{}", key);
+    let perfer_opt = perfer_map.get(key);
+    if perfer_opt.is_some() {
+        let perfer_sql = perfer_opt.unwrap();
+        let new_sql = replace_included_sql(&*sql, key, &perfer_sql);
+        info!("use perfer_sql: {}", perfer_sql);
+        info!("use new_sql: {}", new_sql);
+        return (new_sql, true);
+    }
+    let key_opt = sql_part_map.get(key);
     if key_opt.is_some() {
         let sql_part = key_opt.unwrap();
-        info!("{}:::-->{}", sql_part.0, sql_part.1.sql);
-        let new_sql = replace_included_sql(&*sql, sql_part.0, &sql_part.1.sql);
+        info!("{}:::-->{}", key, sql_part.sql);
+        info!("{}:::-->{}", key, sql_part.has_include);
+        let new_sql = replace_included_sql(&*sql, key, &sql_part.sql);
         info!("{}", new_sql);
         return (new_sql, true);
     } else {
