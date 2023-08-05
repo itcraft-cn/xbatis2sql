@@ -197,17 +197,10 @@ pub trait Parser {
             if stat.has_include {
                 let mut sql = stat.sql.clone();
                 for key in &stat.include_keys {
-                    let key_opt = sql_part_map.get_key_value(key);
-                    if key_opt.is_some() {
-                        let sql_part = key_opt.unwrap();
-                        info!("{}:::-->{}", sql_part.0, sql_part.1.sql);
-                        sql = replace_included_sql(&sql, sql_part.0, &sql_part.1.sql);
-                        info!("{}", sql);
-                    } else {
-                        warn!(
-                            "can not find include_key[{}] in statement[{}]",
-                            key, stat.id
-                        );
+                    let (new_sql, replace) =
+                        replace_included_sql_by_key(&mut sql, stat, sql_part_map, key);
+                    if replace {
+                        sql = new_sql;
                     }
                 }
                 self.clear_and_push(sql_store, &sql);
@@ -249,6 +242,28 @@ pub trait Parser {
             .regex
             .replace_all(origin_sql, regex_replacement.target.as_str())
             .to_string();
+    }
+}
+
+fn replace_included_sql_by_key(
+    sql: &mut String,
+    stat: &SqlStatement,
+    sql_part_map: &HashMap<String, SqlStatement>,
+    key: &String,
+) -> (String, bool) {
+    let key_opt = sql_part_map.get_key_value(key);
+    if key_opt.is_some() {
+        let sql_part = key_opt.unwrap();
+        info!("{}:::-->{}", sql_part.0, sql_part.1.sql);
+        let new_sql = replace_included_sql(&*sql, sql_part.0, &sql_part.1.sql);
+        info!("{}", new_sql);
+        return (new_sql, true);
+    } else {
+        warn!(
+            "can not find include_key[{}] in statement[{}]",
+            key, stat.id
+        );
+        return (String::from(""), false);
     }
 }
 
