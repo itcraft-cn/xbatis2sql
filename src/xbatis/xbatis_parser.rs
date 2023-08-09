@@ -201,7 +201,7 @@ pub trait Parser {
                 let perfer_part_map = compose_sql_in_sql_part(&stat.include_keys, sql_part_map);
                 for key in &stat.include_keys {
                     let (new_sql, replace) = replace_included_sql_by_key(
-                        &mut sql,
+                        &sql,
                         stat,
                         &perfer_part_map,
                         sql_part_map,
@@ -261,8 +261,7 @@ fn compose_sql_in_sql_part(
     let mut perfer_map = HashMap::new();
     for k in include_keys {
         let sql_opt = sql_part_map.get(k);
-        if sql_opt.is_some() {
-            let stat: &SqlStatement = sql_opt.unwrap();
+        if let Some(stat) = sql_opt {
             if stat.has_include {
                 let mut sql = stat.sql.clone();
                 for key in &stat.include_keys {
@@ -281,7 +280,7 @@ fn compose_sql_in_sql_part(
 }
 
 fn replace_included_sql_by_key(
-    sql: &String,
+    sql: &str,
     stat: &SqlStatement,
     perfer_map: &HashMap<String, String>,
     sql_part_map: &HashMap<String, SqlStatement>,
@@ -289,27 +288,25 @@ fn replace_included_sql_by_key(
 ) -> (String, bool) {
     debug!("key:::{}", key);
     let perfer_opt = perfer_map.get(key);
-    if perfer_opt.is_some() {
-        let perfer_sql = perfer_opt.unwrap();
-        let new_sql = replace_included_sql(&*sql, key, &perfer_sql);
+    if let Some(perfer_sql) = perfer_opt {
+        let new_sql = replace_included_sql(sql, key, perfer_sql);
         debug!("use perfer_sql: {}", perfer_sql);
         debug!("use new_sql: {}", new_sql);
         return (new_sql, true);
     }
     let key_opt = sql_part_map.get(key);
-    if key_opt.is_some() {
-        let sql_part = key_opt.unwrap();
+    if let Some(sql_part) = key_opt {
         debug!("{}:::-->{}", key, sql_part.sql);
         debug!("{}:::-->{}", key, sql_part.has_include);
-        let new_sql = replace_included_sql(&*sql, key, &sql_part.sql);
+        let new_sql = replace_included_sql(sql, key, &sql_part.sql);
         debug!("{}", new_sql);
-        return (new_sql, true);
+        (new_sql, true)
     } else {
         warn!(
             "can not find include_key[{}] in statement[{}]",
             key, stat.id
         );
-        return (String::from(""), false);
+        (String::from(""), false)
     }
 }
 
