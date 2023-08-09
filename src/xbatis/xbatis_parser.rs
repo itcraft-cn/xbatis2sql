@@ -190,39 +190,51 @@ pub trait Parser {
         let comment_leading = comment_leading2(self.dialect_type());
         let comment_tailing = comment_tailing2(self.dialect_type());
         for stat in statements {
-            debug!("----------------------------------------------------------------");
-            sql_store.push(compose_comment(
-                &comment_leading.to_string(),
-                &String::from(&stat.id),
-                &comment_tailing.to_string(),
-            ));
-            if stat.has_include {
-                let mut sql = stat.sql.clone();
-                let perfer_part_map = compose_sql_in_sql_part(&stat.include_keys, sql_part_map);
-                for key in &stat.include_keys {
-                    let (new_sql, replace) = replace_included_sql_by_key(
-                        &sql,
-                        stat,
-                        &perfer_part_map,
-                        sql_part_map,
-                        key,
-                    );
-                    if replace {
-                        sql = new_sql;
-                    }
+            self.replace_single_statement(
+                sql_store,
+                &comment_leading,
+                stat,
+                &comment_tailing,
+                sql_part_map,
+            );
+        }
+    }
+
+    fn replace_single_statement(
+        &self,
+        sql_store: &mut Vec<String>,
+        comment_leading: &String,
+        stat: &SqlStatement,
+        comment_tailing: &String,
+        sql_part_map: &HashMap<String, SqlStatement>,
+    ) {
+        debug!("----------------------------------------------------------------");
+        sql_store.push(compose_comment(
+            &comment_leading.to_string(),
+            &String::from(&stat.id),
+            &comment_tailing.to_string(),
+        ));
+        if stat.has_include {
+            let mut sql = stat.sql.clone();
+            let perfer_part_map = compose_sql_in_sql_part(&stat.include_keys, sql_part_map);
+            for key in &stat.include_keys {
+                let (new_sql, replace) =
+                    replace_included_sql_by_key(&sql, stat, &perfer_part_map, sql_part_map, key);
+                if replace {
+                    sql = new_sql;
                 }
-                self.clear_and_push(sql_store, &sql);
-            } else {
-                self.clear_and_push(sql_store, &stat.sql);
             }
-            if stat.has_sql_key {
-                sql_store.push(compose_comment(
-                    &comment_leading,
-                    &stat.sql_key.key,
-                    &comment_tailing,
-                ));
-                self.clear_and_push(sql_store, &stat.sql_key.sql);
-            }
+            self.clear_and_push(sql_store, &sql);
+        } else {
+            self.clear_and_push(sql_store, &stat.sql);
+        }
+        if stat.has_sql_key {
+            sql_store.push(compose_comment(
+                comment_leading,
+                &stat.sql_key.key,
+                comment_tailing,
+            ));
+            self.clear_and_push(sql_store, &stat.sql_key.sql);
         }
     }
 
@@ -260,23 +272,31 @@ fn compose_sql_in_sql_part(
     let empty_map = HashMap::new();
     let mut perfer_map = HashMap::new();
     for k in include_keys {
-        let sql_opt = sql_part_map.get(k);
-        if let Some(stat) = sql_opt {
-            if stat.has_include {
-                let mut sql = stat.sql.clone();
-                for key in &stat.include_keys {
-                    let (new_sql, replace) =
-                        replace_included_sql_by_key(&sql, stat, &empty_map, sql_part_map, key);
-                    debug!("{} {} {} {} {}", stat.id, k, sql, new_sql, replace);
-                    if replace {
-                        sql = new_sql.clone();
-                        perfer_map.insert(String::from(k), new_sql.clone());
-                    }
-                }
-            }
-        }
+        check_include_and_replace(sql_part_map, k, &empty_map, &mut perfer_map);
     }
     perfer_map
+}
+
+fn check_include_and_replace(sql_part_map: &HashMap<String, SqlStatement>, k: &String, empty_map: &HashMap<String, String>, perfer_map: &mut HashMap<String, String>) {
+    let sql_opt = sql_part_map.get(k);
+    if let Some(stat) = sql_opt {
+        if stat.has_include {
+            loop_replace_sql_in_sql(stat, empty_map, sql_part_map, k, perfer_map);
+        }
+    }
+}
+
+fn loop_replace_sql_in_sql(stat: &SqlStatement, empty_map: &HashMap<String, String>, sql_part_map: &HashMap<String, SqlStatement>, k: &String, perfer_map: &mut HashMap<String, String>) {
+    let mut sql = stat.sql.clone();
+    for key in &stat.include_keys {
+        let (new_sql, replace) =
+            replace_included_sql_by_key(&sql, stat, empty_map, sql_part_map, key);
+        debug!("{} {} {} {} {}", stat.id, k, sql, new_sql, replace);
+        if replace {
+            sql = new_sql.clone();
+            perfer_map.insert(String::from(k), new_sql.clone());
+        }
+    }
 }
 
 fn replace_included_sql_by_key(
