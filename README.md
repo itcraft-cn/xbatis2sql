@@ -62,20 +62,20 @@ After executing, the result will be exist in `/tmp/result.sql`.
 **`result.sql`**
 
 ```sql
--- ./test_data/mapper-demo.xml
---- insert
+SELECT "XML -FILE: ./test_data/mapper-demo.xml" AS XML_FILE FROM DUAL;
+SELECT "STAT -ID: insert" AS STAT_ID FROM DUAL;
 INSERT INTO TAB1(A,B,C,D) VALUES (:?,:?,:?,:?);
---- insert.selectKey
+SELECT "STAT -ID: insert.selectKey" AS STAT_ID FROM DUAL;
 SELECT 1 FROM DUAL;
---- select
+SELECT "STAT -ID: select" AS STAT_ID FROM DUAL;
 SELECT * FROM TAB1 WHERE COLUMN1 IN ( :?);
---- insert2
+SELECT "STAT -ID: insert2" AS STAT_ID FROM DUAL;
 INSERT INTO TAB2 ( ID)VALUES ( :?);
---- select2
+SELECT "STAT -ID: select2" AS STAT_ID FROM DUAL;
 SELECT COLUMN1, COLUMN2 , (SELECT 1 FROM DUAL) FROM TAB3 WHERE COLUMN1 = :? ORDER BY COLUMN2 DESC;
---- update
+SELECT "STAT -ID: update" AS STAT_ID FROM DUAL;
 UPDATE TAB1 SET COLUMN1 = :? WHERE COLUMN1 = :?;
---- delete
+SELECT "STAT -ID: delete" AS STAT_ID FROM DUAL;
 DELETE FROM TAB1 WHERE COLUMN1 = :? AND COLUMN2 = :?;
 ```
 
@@ -86,14 +86,14 @@ DELETE FROM TAB1 WHERE COLUMN1 = :? AND COLUMN2 = :?;
 **`result.sql`**
 
 ```sql
--- ./test_data/sqlmap-demo.xml
---- select
+SELECT "XML -FILE: ./test_data/sqlmap-demo.xml" AS XML_FILE FROM DUAL;
+SELECT "STAT -ID: select" AS STAT_ID FROM DUAL;
 SELECT COUNT(1) , (SELECT 1 FROM DUAL) FROM __REPLACE_SCHEMA__.TAB1 WHERE COLUMN1 = 'BALABALA' AND COLUMN2 = :?;
---- update
+SELECT "STAT -ID: update" AS STAT_ID FROM DUAL;
 UPDATE __REPLACE_SCHEMA__.TAB2 SET COLUMN2 = :? WHERE COLUMN1 = :?;
---- delete
+SELECT "STAT -ID: delete" AS STAT_ID FROM DUAL;
 DELETE FROM __REPLACE_SCHEMA__.TAB1 WHERE COLUMN1 = :?;
---- insert
+SELECT "STAT -ID: insert" AS STAT_ID FROM DUAL;
 INSERT INTO __REPLACE_SCHEMA__.TAB1 (COLUMN1, COLUMN2, COLUMN3, COLUMN4, COLUMN5) VALUES (:?, :?, :?, :?, :?);
 ```
 
