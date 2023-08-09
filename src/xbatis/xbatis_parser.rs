@@ -277,7 +277,12 @@ fn compose_sql_in_sql_part(
     perfer_map
 }
 
-fn check_include_and_replace(sql_part_map: &HashMap<String, SqlStatement>, k: &String, empty_map: &HashMap<String, String>, perfer_map: &mut HashMap<String, String>) {
+fn check_include_and_replace(
+    sql_part_map: &HashMap<String, SqlStatement>,
+    k: &String,
+    empty_map: &HashMap<String, String>,
+    perfer_map: &mut HashMap<String, String>,
+) {
     let sql_opt = sql_part_map.get(k);
     if let Some(stat) = sql_opt {
         if stat.has_include {
@@ -286,7 +291,13 @@ fn check_include_and_replace(sql_part_map: &HashMap<String, SqlStatement>, k: &S
     }
 }
 
-fn loop_replace_sql_in_sql(stat: &SqlStatement, empty_map: &HashMap<String, String>, sql_part_map: &HashMap<String, SqlStatement>, k: &String, perfer_map: &mut HashMap<String, String>) {
+fn loop_replace_sql_in_sql(
+    stat: &SqlStatement,
+    empty_map: &HashMap<String, String>,
+    sql_part_map: &HashMap<String, SqlStatement>,
+    k: &String,
+    perfer_map: &mut HashMap<String, String>,
+) {
     let mut sql = stat.sql.clone();
     for key in &stat.include_keys {
         let (new_sql, replace) =
@@ -332,29 +343,29 @@ fn replace_included_sql_by_key(
 
 fn comment_leading(dialet_type: &DialectType) -> String {
     match dialet_type {
-        DialectType::Oracle => "-- ".to_string(),
-        DialectType::MySQL => "/* ".to_string(),
+        DialectType::Oracle => "SELECT \"XML-FILE: ".to_string(),
+        DialectType::MySQL => "SELECT \"XML-FILE: ".to_string(),
     }
 }
 
 fn comment_leading2(dialet_type: &DialectType) -> String {
     match dialet_type {
-        DialectType::Oracle => "--- ".to_string(),
-        DialectType::MySQL => "/** ".to_string(),
+        DialectType::Oracle => "SELECT \"STAT-ID: ".to_string(),
+        DialectType::MySQL => "SELECT \"STAT-ID: ".to_string(),
     }
 }
 
 fn comment_tailing(dialet_type: &DialectType) -> String {
     match dialet_type {
-        DialectType::Oracle => "".to_string(),
-        DialectType::MySQL => " */".to_string(),
+        DialectType::Oracle => "\" AS XML_FILE FROM DUAL;".to_string(),
+        DialectType::MySQL => "\" AS XML_FILE;".to_string(),
     }
 }
 
 fn comment_tailing2(dialet_type: &DialectType) -> String {
     match dialet_type {
-        DialectType::Oracle => "--- ".to_string(),
-        DialectType::MySQL => " */".to_string(),
+        DialectType::Oracle => "\" AS STAT_ID FROM DUAL;".to_string(),
+        DialectType::MySQL => "\" AS STAT_ID;".to_string(),
     }
 }
 
