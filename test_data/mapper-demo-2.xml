@@ -1,89 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE mapper
-        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="Dao">
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="demo2">
 
-    <sql id="Base_Column_List">
-        DATA_TYPE_VALIDAT_ID,
-        COMMENTS
-    </sql>
-
-    <sql id="querySql">
-        SELECT
-        <include refid="Base_Column_List"/>
-        from
-        ${schema}.PUB_VALIDAT
-        <where>
-            <if test="keyword != null">AND
-                (
-                FIELD like concat('%', concat(#{keyword}, '%'))
-                OR FIELD_NAME like concat('%', concat(#{keyword}, '%'))
-                OR FIELD_LOCAL_NAME like concat('%', concat(#{keyword}, '%'))
-                )
-            </if>
-        </where>
-        order by SORT
-    </sql>
-
-    <select id="getOne" resultMap="BaseResultMap">
-        select
-        <include refid="Base_Column_List"/>
-        from
-        ${schema}.PUB_VALIDAT
-        where
-        DATA_TYPE_VALIDAT_ID = #{dataTypeValidatId}
-    </select>
-
-    <select id="queryList" resultMap="BaseResultMap">
-        <include refid="querySql"/>
-    </select>
-
-    <select id="queryPage" resultMap="BaseResultMap">
-        <include refid="querySql"/>
-    </select>
-
-    <delete id="delete">
-        delete from ${schema}.PUB_VALIDAT where DATA_TYPE_VALIDAT_ID = #{dataTypeValidatId}
-    </delete>
-
-    <insert id="insert">
-        insert into ${schema}.PUB_VALIDAT
-        (
-        <include refid="Base_Column_List"/>
-        )
-        values (
-        #{dataTypeValidatId},
-        #{dataTypeId},
-        #{dataTypeCode},
-        #{dataTypeName},
-        #{dataTypeLocalName},
-        #{fieldId},
-        #{field},
-        #{fieldName},
-        #{fieldLocalName},
-        #{fieldIsDisplay},
-        #{validationRuleType},
-        #{validationRule},
-        #{validationExpresstion},
-        #{errorCode},
-        #{sort},
-        #{status},
-        #{comments}
-        )
-    </insert>
-
-    <update id="update">
-        update ${schema}.PUB_VALIDAT
-        <set>
-            <if test="comments != null">COMMENTS = #{comments},</if>
-        </set>
-        where
-        DATA_TYPE_VALIDAT_ID = #{dataTypeValidatId}
-    </update>
-
-    <delete id="deleteByDataTypeId">
-        delete from ${schema}.PUB_VALIDAT where DATA_TYPE_ID = #{dataTypeId}
-    </delete>
+	<select id="select">
+		SELECT 
+		<include refid="demo.sql_b"/>
+		,
+		<include refid="demo.sql_c"/>
+		FROM tab1 where column1 in
+		<foreach collection="list" index="index" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+	</select>
 
 </mapper>

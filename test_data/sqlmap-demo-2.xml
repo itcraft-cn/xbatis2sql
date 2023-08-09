@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="demo2">
+
+  <select id="select">
+    SELECT 
+    <include refid="demo.sql_b" />
+		FROM ${schema}.tab1
+		WHERE column1 = 'balabala'
+    <isGreaterThan prepend="and" property="column2" compareValue="0">
+			column2 = #column2:NUMERIC#
+		</isGreaterThan>
+  </select>
+
+</sqlMap>
