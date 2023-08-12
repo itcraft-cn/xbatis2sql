@@ -99,7 +99,12 @@ pub trait Parser {
         state: &mut XmlParsedState,
     ) {
         let element_name = name.local_name.as_str().to_ascii_lowercase();
-        if match_statement(&element_name) {
+        if element_name == "mapper" || element_name == "sqlmap" {
+            search_matched_attr(&attributes, "namespace", |attr| {
+                state.namespace = attr.value.clone();
+                debug!("namespace: {}", state.namespace);
+            });
+        } else if match_statement(&element_name) {
             state.in_statement = true;
             search_matched_attr(&attributes, "id", |attr| {
                 state.current_id = attr.value.clone();

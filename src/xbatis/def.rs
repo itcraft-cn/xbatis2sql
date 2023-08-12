@@ -84,6 +84,9 @@ impl SqlStatement {
 pub struct XmlParsedState {
     /// 过程中变化
 
+    /// 命名空间
+    pub namespace: String,
+
     /// 是否在语句中
     pub in_statement: bool,
     /// 是否在key语句中
@@ -124,6 +127,7 @@ impl XmlParsedState {
     /// 构建器，构造工厂
     pub fn new() -> Self {
         XmlParsedState {
+            namespace: String::from(""),
             in_statement: false,
             in_sql_key: false,
             in_loop: false,
