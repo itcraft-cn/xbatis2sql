@@ -11,24 +11,22 @@ mod scan;
 /// 解析器
 mod xbatis;
 
-use args::args_parser::XBatisMode::*;
-use args::args_parser::*;
-use log::*;
-use logit::log_initializer::*;
-use save::sql_saver::*;
-use scan::xml_scanner::*;
-use xbatis::def::*;
-use xbatis::ibatis_parser::*;
-use xbatis::mybatis_parser::*;
-use xbatis::xbatis_parser::*;
+use crate::{
+    args::args_parser::{self, DbType, XBatisMode},
+    logit::log_initializer,
+    save::sql_saver,
+    scan::xml_scanner,
+    xbatis::{def::DialectType, ibatis_parser, mybatis_parser, xbatis_parser::Parser},
+};
+use log::info;
 
 /// 主函数，解析参数并调用后续函数
 fn main() {
-    let args = check_args();
+    let args = args_parser::check_args();
     if args.fast_fail {
-        print_usage(&args);
+        args_parser::print_usage(&args);
     } else if args.show_version {
-        print_version();
+        args_parser::print_version();
     } else {
         parse_xbatis_xml(args.mode, args.db_type, &args.src_dir, &args.output_dir);
     }
@@ -36,22 +34,22 @@ fn main() {
 
 /// 选择并执行对应的解析器
 fn parse_xbatis_xml(mode: XBatisMode, db_type: DbType, src_dir: &String, output_dir: &String) {
-    init_logger();
+    log_initializer::init_logger();
     info!(
         "try to parse files in {:?}, fetch sql to {:?}",
         src_dir, output_dir
     );
     let mut files: Vec<String> = Vec::new();
-    scan(&mut files, src_dir);
+    xml_scanner::scan(&mut files, src_dir);
     let parser = choose_parser(mode, convert(db_type));
     let sql_store = parser.parse(&files);
-    save(output_dir, sql_store);
+    sql_saver::save(output_dir, sql_store);
 }
 
 fn choose_parser(mode: XBatisMode, dialect_type: DialectType) -> Box<dyn Parser> {
     match mode {
-        IBatis => Box::new(create_ibatis_parser(dialect_type)),
-        MyBatis => Box::new(create_mybatis_parser(dialect_type)),
+        XBatisMode::IBatis => Box::new(ibatis_parser::create_ibatis_parser(dialect_type)),
+        XBatisMode::MyBatis => Box::new(mybatis_parser::create_mybatis_parser(dialect_type)),
         _ => panic!("not supported mode"),
     }
 }

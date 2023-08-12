@@ -1,13 +1,19 @@
-use super::def::*;
-use super::parse_helper::*;
-use super::xbatis_parser::*;
-use lazy_static::*;
+use super::{
+    def::{DialectType, RegexReplacement, XmlParsedState},
+    parse_helper,
+    xbatis_parser::Parser,
+};
+use lazy_static::lazy_static;
+use log::warn;
 use regex::Regex;
-use xml::attribute::*;
-use xml::name::*;
+use std::process;
+use xml::{attribute::OwnedAttribute, name::OwnedName};
 
 lazy_static! {
-    static ref RE: Regex = Regex::new("DTD SQL Map 2\\.0").unwrap();
+    static ref RE: Regex = Regex::new("DTD SQL Map 2\\.0").unwrap_or_else(|e| {
+        warn!("Unable to parse the regex: {}", e);
+        process::exit(-1);
+    });
 }
 
 /// `iBATIS` 实现
@@ -69,7 +75,7 @@ impl Parser for IBatisParser {
         state: &mut XmlParsedState,
     ) {
         if state.in_statement {
-            search_matched_attr(attributes, "prepend", |attr| {
+            parse_helper::search_matched_attr(attributes, "prepend", |attr| {
                 state.sql_builder += " ";
                 state.sql_builder += attr.value.as_str();
                 state.sql_builder += " ";

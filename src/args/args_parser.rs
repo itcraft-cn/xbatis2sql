@@ -1,4 +1,4 @@
-use getopts::*;
+use getopts::{Matches, Options};
 use std::env;
 
 macro_rules! fail {
@@ -130,7 +130,12 @@ fn actual_check_args(opts: Options, matches: Matches) -> Args {
     } else if output_dir.is_none() {
         fail!("must define the output directory", opts);
     }
-    let db_type = DbType::from(o_db_type.unwrap().to_ascii_lowercase().as_str());
+    let db_type = DbType::from(
+        o_db_type
+            .unwrap_or(String::from(""))
+            .to_ascii_lowercase()
+            .as_str(),
+    );
     match db_type {
         DbType::Unknown => fail!("must choose db type in oracle or mysql", opts),
         _ => gen_args(opts, db_type, mode_ibatis, src_dir, output_dir),
@@ -149,7 +154,13 @@ fn gen_args(
     } else {
         XBatisMode::MyBatis
     };
-    Args::new(mode, db_type, &src_dir.unwrap(), &output_dir.unwrap(), opts)
+    Args::new(
+        mode,
+        db_type,
+        &src_dir.unwrap_or(String::from("")),
+        &output_dir.unwrap_or(String::from("")),
+        opts,
+    )
 }
 
 /// 打印使用方法

@@ -1,8 +1,5 @@
-use log::*;
-use std::fs::File;
-use std::io::Write;
-use std::process;
-use std::*;
+use log::{info, warn};
+use std::{fs::File, io::Write, process};
 
 /// 回车
 const CRLF: [u8; 1] = [0x0a];
@@ -18,7 +15,10 @@ pub fn save(output_dir: &String, sql_store: Vec<String>) {
         warn!("try to write sql to {:?} failed", output_dir);
         process::exit(-1);
     }
-    let mut f = r.unwrap();
+    let mut f = r.unwrap_or_else(|_e| {
+        warn!("try to write sql to {:?} failed", output_dir);
+        process::exit(-1);
+    });
     for sql in sql_store {
         write2file(&mut f, sql.as_bytes(), output_dir);
         write2file(&mut f, &CRLF, output_dir);

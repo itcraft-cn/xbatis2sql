@@ -1,13 +1,19 @@
-use super::def::*;
-use super::parse_helper::search_matched_attr;
-use super::xbatis_parser::*;
-use lazy_static::*;
+use super::{
+    def::{DialectType, RegexReplacement, XmlParsedState},
+    parse_helper,
+    xbatis_parser::Parser,
+};
+use lazy_static::lazy_static;
+use log::warn;
 use regex::Regex;
-use xml::attribute::*;
-use xml::name::*;
+use std::process;
+use xml::{attribute::OwnedAttribute, name::OwnedName};
 
 lazy_static! {
-    static ref RE: Regex = Regex::new("DTD Mapper 3\\.0").unwrap();
+    static ref RE: Regex = Regex::new("DTD Mapper 3\\.0").unwrap_or_else(|e| {
+        warn!("Unable to parse the regex: {}", e);
+        process::exit(-1);
+    });
 }
 
 /// `MyBatis` 实现
@@ -72,21 +78,21 @@ impl Parser for MyBatisParser {
             state.sql_builder += " set ";
         } else if element_name == "trim" {
             state.in_loop = true;
-            search_matched_attr(attributes, "prefix", |attr| {
+            parse_helper::search_matched_attr(attributes, "prefix", |attr| {
                 self.fill_content(state, attr.value.clone());
             });
-            search_matched_attr(attributes, "suffix", |attr| {
+            parse_helper::search_matched_attr(attributes, "suffix", |attr| {
                 state.loop_def.suffix = attr.value.clone();
             });
         } else if element_name == "foreach" {
             state.in_loop = true;
-            search_matched_attr(attributes, "open", |attr| {
+            parse_helper::search_matched_attr(attributes, "open", |attr| {
                 self.fill_content(state, attr.value.clone());
             });
-            search_matched_attr(attributes, "close", |attr| {
+            parse_helper::search_matched_attr(attributes, "close", |attr| {
                 state.loop_def.suffix = attr.value.clone();
             });
-            search_matched_attr(attributes, "separator", |attr| {
+            parse_helper::search_matched_attr(attributes, "separator", |attr| {
                 state.loop_def.separator = attr.value.clone();
             });
         }

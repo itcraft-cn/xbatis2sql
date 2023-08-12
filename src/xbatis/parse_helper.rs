@@ -1,5 +1,4 @@
-use std::*;
-use xml::attribute::*;
+use xml::attribute::OwnedAttribute;
 
 /// 替换 `include`，用对应的 `sql` 进行合并
 pub fn replace_included_sql(orig_sql: &str, id: &str, sql_part: &str) -> String {

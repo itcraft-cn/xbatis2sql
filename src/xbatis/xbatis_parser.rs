@@ -1,12 +1,11 @@
-use super::def::*;
-use super::parse_helper::*;
-use log::*;
+use super::{
+    def::{DialectType, Mode, RegexReplacement, SqlKey, SqlStatement, XmlParsedState},
+    parse_helper::{match_statement, replace_included_sql, search_matched_attr},
+};
+use log::{debug, info, warn};
 use regex::Regex;
-use std::collections::HashMap;
-use std::*;
-use xml::attribute::*;
-use xml::name::*;
-use xml::reader::*;
+use std::{collections::HashMap, fs, io::BufReader, process};
+use xml::{attribute::OwnedAttribute, name::OwnedName, reader::XmlEvent, EventReader};
 
 /// 解析器
 pub trait Parser {
@@ -50,8 +49,11 @@ pub trait Parser {
             &filename.to_string(),
             &comment_tailing(self.dialect_type()),
         ));
-        let file = fs::File::open(filename).unwrap();
-        let buf = io::BufReader::new(file);
+        let file = fs::File::open(filename).unwrap_or_else(|e| {
+            warn!("open file [{}] failed: {}", filename, e);
+            process::exit(-1);
+        });
+        let buf = BufReader::new(file);
         let parser = EventReader::new(buf);
         let mut state = XmlParsedState::new();
         state.filename = filename.clone();
