@@ -17,9 +17,9 @@ keywords = ["iBATIS", "MyBatis", "SQL", "Parser", "XML"]
 
 [dependencies]
 log = "0.4.17"
-simplelog = "0.12.0"
+log4rs = {version="1.2.0",features = []}
 walkdir = "2.3.2"
 regex = "1.7.1"
 lazy_static = "1.4.0"
-xml-rs = "0.8.4"
+xml-rs = "0.8.16"
 getopts = "0.2.21"
