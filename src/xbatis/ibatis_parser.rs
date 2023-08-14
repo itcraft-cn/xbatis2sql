@@ -89,6 +89,10 @@ impl Parser for IBatisParser {
     }
 
     fn clear_and_push(&self, sql_store: &mut Vec<String>, origin_sql: &str) {
-        self.loop_clear_and_push(sql_store, &self.re_vec, origin_sql)
+        self.loop_clear_and_push(sql_store, &self.re_vec, origin_sql, true);
+    }
+
+    fn vec_regex(&self) -> &Vec<RegexReplacement> {
+        return &self.re_vec;
     }
 }

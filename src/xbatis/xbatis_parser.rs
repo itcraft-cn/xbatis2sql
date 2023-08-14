@@ -2,10 +2,18 @@ use super::{
     def::{DialectType, Mode, RegexReplacement, SqlKey, SqlStatement, XmlParsedState},
     parse_helper::{match_statement, replace_included_sql, search_matched_attr},
 };
+use lazy_static::lazy_static;
 use log::{debug, info, warn};
 use regex::Regex;
 use std::{collections::HashMap, fs, io::BufReader, process};
 use xml::{attribute::OwnedAttribute, name::OwnedName, reader::XmlEvent, EventReader};
+
+lazy_static! {
+    static ref INC_REGEX: Regex = Regex::new("__INCLUDE_ID_").unwrap_or_else(|e| {
+        warn!("Unable to parse the regex: {}", e);
+        process::exit(-1);
+    });
+}
 
 /// 解析器
 pub trait Parser {
@@ -19,9 +27,13 @@ pub trait Parser {
         for file in files {
             self.check_and_parse(file, &mut sql_store, &mut global_inc_map);
         }
-        let mut final_sql_store = Vec::new();
+        let mut replaced_sql_store = Vec::new();
         for sql in sql_store {
-            final_sql_store.push(self.replace_inc_between_xml(&sql, &global_inc_map));
+            replaced_sql_store.push(self.replace_inc_between_xml(&sql, &global_inc_map));
+        }
+        let mut final_sql_store = Vec::new();
+        for sql in replaced_sql_store {
+            self.loop_clear_and_push(&mut final_sql_store, &self.vec_regex(), &sql, false);
         }
         final_sql_store
     }
@@ -273,14 +285,7 @@ pub trait Parser {
             &comment_tailing.to_string(),
         ));
         if stat.has_include {
-            let mut sql = stat.sql.clone();
-            for key in file_inc_map.keys() {
-                let (new_sql, replace) = replace_included_sql_by_key(&sql, stat, file_inc_map, key);
-                if replace {
-                    sql = new_sql;
-                }
-            }
-            self.clear_and_push(sql_store, &sql);
+            self.clear_and_push(sql_store, &loop_replace_include_part(stat, file_inc_map));
         } else {
             self.clear_and_push(sql_store, &stat.sql);
         }
@@ -301,12 +306,17 @@ pub trait Parser {
         sql_store: &mut Vec<String>,
         regex_replacements: &[RegexReplacement],
         origin_sql: &str,
+        append: bool,
     ) {
         let mut sql = String::from(origin_sql.to_ascii_uppercase().trim());
         for regex_replacement in regex_replacements.iter() {
             sql = self.regex_clear_and_push(&sql, regex_replacement);
         }
-        sql_store.push(sql + ";");
+        if append {
+            sql_store.push(sql + ";");
+        } else {
+            sql_store.push(sql);
+        }
     }
 
     fn regex_clear_and_push(
@@ -319,6 +329,27 @@ pub trait Parser {
             .replace_all(origin_sql, regex_replacement.target.as_str())
             .to_string();
     }
+
+    fn vec_regex(&self) -> &Vec<RegexReplacement>;
+}
+
+fn loop_replace_include_part(
+    stat: &SqlStatement,
+    file_inc_map: &HashMap<String, String>,
+) -> String {
+    let mut sql = stat.sql.clone();
+    for _i in 0..10 {
+        for key in file_inc_map.keys() {
+            let (new_sql, replace) = replace_included_sql_by_key(&sql, stat, file_inc_map, key);
+            if replace {
+                sql = new_sql;
+            }
+        }
+        if !INC_REGEX.is_match(&sql) {
+            break;
+        }
+    }
+    return sql;
 }
 
 fn replace_included_sql_by_key(
