@@ -15,16 +15,48 @@ pub trait Parser {
 
     fn parse(&self, files: &Vec<String>) -> Vec<String> {
         let mut sql_store: Vec<String> = Vec::new();
+        let mut global_inc_map = HashMap::new();
         for file in files {
-            self.check_and_parse(file, &mut sql_store);
+            self.check_and_parse(file, &mut sql_store, &mut global_inc_map);
         }
-        sql_store
+        let mut final_sql_store = Vec::new();
+        for sql in sql_store {
+            final_sql_store.push(self.replace_inc_between_xml(&sql, &global_inc_map));
+        }
+        final_sql_store
     }
 
-    fn check_and_parse(&self, file: &String, sql_store: &mut Vec<String>) {
+    fn replace_inc_between_xml(
+        &self,
+        sql: &String,
+        global_inc_map: &HashMap<String, String>,
+    ) -> String {
+        debug!("--------------------------------");
+        debug!("{}", sql);
+        let mut new_sql = sql.clone();
+        for key in global_inc_map.keys() {
+            let target = format!("{}{}{}", "__INCLUDE_ID_", key, "_END__").to_ascii_uppercase();
+            debug!("{}", target);
+            new_sql = replace_included_sql(
+                &new_sql,
+                &key.to_ascii_uppercase().as_str(),
+                global_inc_map.get(key).unwrap_or(&target).as_str(),
+            )
+        }
+        debug!("{}", new_sql);
+        debug!("--------------------------------");
+        new_sql
+    }
+
+    fn check_and_parse(
+        &self,
+        file: &String,
+        sql_store: &mut Vec<String>,
+        global_inc_map: &mut HashMap<String, String>,
+    ) {
         if self.detect_match(file) {
             info!("try to parse [{}]", file);
-            self.read_and_parse(file, sql_store);
+            self.read_and_parse(file, sql_store, global_inc_map);
         }
     }
 
@@ -39,11 +71,26 @@ pub trait Parser {
         }
     }
 
-    fn read_and_parse(&self, file: &String, sql_store: &mut Vec<String>) {
-        self.read_xml(file, sql_store);
+    fn read_and_parse(
+        &self,
+        file: &String,
+        sql_store: &mut Vec<String>,
+        global_inc_map: &mut HashMap<String, String>,
+    ) {
+        let mut sql_parsed = Vec::new();
+        self.read_xml(file, &mut sql_parsed, global_inc_map);
+        for sql in sql_parsed {
+            sql_store.push(sql);
+        }
     }
 
-    fn read_xml(&self, filename: &String, sql_store: &mut Vec<String>) {
+    fn read_xml(
+        &self,
+        filename: &String,
+        sql_store: &mut Vec<String>,
+        global_inc_map: &mut HashMap<String, String>,
+    ) {
+        let mut file_inc_map = HashMap::new();
         sql_store.push(compose_comment(
             &comment_leading(self.dialect_type()),
             &filename.to_string(),
@@ -62,7 +109,9 @@ pub trait Parser {
                 Ok(XmlEvent::StartElement {
                     name, attributes, ..
                 }) => self.parse_start_element(name, attributes, &mut state),
-                Ok(XmlEvent::EndElement { name }) => self.parse_end_element(name, &mut state),
+                Ok(XmlEvent::EndElement { name }) => {
+                    self.parse_end_element(name, &mut state, global_inc_map, &mut file_inc_map)
+                }
                 Ok(XmlEvent::CData(content)) => self.fill_xml_content(&mut state, content),
                 Ok(XmlEvent::Characters(content)) => self.fill_xml_content(&mut state, content),
                 Err(e) => {
@@ -72,7 +121,7 @@ pub trait Parser {
                 _ => {}
             }
         }
-        self.replace_and_fill(sql_store, &state.statements, &state.sql_part_map);
+        self.replace_and_fill(sql_store, &state.statements, &file_inc_map);
     }
 
     fn fill_xml_content(&self, state: &mut XmlParsedState, content: String) {
@@ -123,7 +172,6 @@ pub trait Parser {
                 state.sql_builder += refid.as_str();
                 state.sql_builder += "_END__";
                 state.has_include = true;
-                state.include_keys.push(refid);
             });
         } else {
             self.ex_parse_start_element(name, &element_name, &attributes, state);
@@ -138,12 +186,18 @@ pub trait Parser {
         state: &mut XmlParsedState,
     );
 
-    fn parse_end_element(&self, name: OwnedName, state: &mut XmlParsedState) {
+    fn parse_end_element(
+        &self,
+        name: OwnedName,
+        state: &mut XmlParsedState,
+        global_inc_map: &mut HashMap<String, String>,
+        file_inc_map: &mut HashMap<String, String>,
+    ) {
         let element_name = name.local_name.as_str().to_ascii_lowercase();
         if match_statement(&element_name) {
             let mode = Mode::from(element_name.as_str());
             match mode {
-                Mode::SqlPart => self.handle_end_sql_part(mode, state),
+                Mode::SqlPart => self.handle_end_sql_part(state, global_inc_map, file_inc_map),
                 _ => self.handle_end_statement(mode, state),
             }
         } else if element_name == "selectkey" {
@@ -155,19 +209,17 @@ pub trait Parser {
 
     fn ex_parse_end_element(&self, name: OwnedName, element_name: &str, state: &mut XmlParsedState);
 
-    fn handle_end_sql_part(&self, mode: Mode, state: &mut XmlParsedState) {
-        let sql_stat = SqlStatement::new(
-            mode,
-            state.current_id.clone(),
+    fn handle_end_sql_part(
+        &self,
+        state: &mut XmlParsedState,
+        global_inc_map: &mut HashMap<String, String>,
+        file_inc_map: &mut HashMap<String, String>,
+    ) {
+        file_inc_map.insert(state.current_id.clone(), state.sql_builder.to_string());
+        global_inc_map.insert(
+            format!("{}.{}", state.namespace, state.current_id.clone()),
             state.sql_builder.to_string(),
-            state.has_include,
-            state.include_keys.clone(),
-            state.has_sql_key,
-            SqlKey::empty(),
         );
-        state
-            .sql_part_map
-            .insert(state.current_id.clone(), sql_stat);
         state.reset();
     }
 
@@ -177,7 +229,6 @@ pub trait Parser {
             state.current_id.clone(),
             state.sql_builder.to_string(),
             state.has_include,
-            state.include_keys.clone(),
             state.has_sql_key,
             SqlKey {
                 key: state.current_key_id.clone(),
@@ -192,7 +243,7 @@ pub trait Parser {
         &self,
         sql_store: &mut Vec<String>,
         statements: &Vec<SqlStatement>,
-        sql_part_map: &HashMap<String, SqlStatement>,
+        file_inc_map: &HashMap<String, String>,
     ) {
         let comment_leading = comment_leading2(self.dialect_type());
         let comment_tailing = comment_tailing2(self.dialect_type());
@@ -202,7 +253,7 @@ pub trait Parser {
                 &comment_leading,
                 stat,
                 &comment_tailing,
-                sql_part_map,
+                file_inc_map,
             );
         }
     }
@@ -213,7 +264,7 @@ pub trait Parser {
         comment_leading: &String,
         stat: &SqlStatement,
         comment_tailing: &String,
-        sql_part_map: &HashMap<String, SqlStatement>,
+        file_inc_map: &HashMap<String, String>,
     ) {
         debug!("----------------------------------------------------------------");
         sql_store.push(compose_comment(
@@ -223,10 +274,8 @@ pub trait Parser {
         ));
         if stat.has_include {
             let mut sql = stat.sql.clone();
-            let perfer_part_map = compose_sql_in_sql_part(&stat.include_keys, sql_part_map);
-            for key in &stat.include_keys {
-                let (new_sql, replace) =
-                    replace_included_sql_by_key(&sql, stat, &perfer_part_map, sql_part_map, key);
+            for key in file_inc_map.keys() {
+                let (new_sql, replace) = replace_included_sql_by_key(&sql, stat, file_inc_map, key);
                 if replace {
                     sql = new_sql;
                 }
@@ -272,71 +321,17 @@ pub trait Parser {
     }
 }
 
-fn compose_sql_in_sql_part(
-    include_keys: &Vec<String>,
-    sql_part_map: &HashMap<String, SqlStatement>,
-) -> HashMap<String, String> {
-    let empty_map = HashMap::new();
-    let mut perfer_map = HashMap::new();
-    for k in include_keys {
-        check_include_and_replace(sql_part_map, k, &empty_map, &mut perfer_map);
-    }
-    perfer_map
-}
-
-fn check_include_and_replace(
-    sql_part_map: &HashMap<String, SqlStatement>,
-    k: &String,
-    empty_map: &HashMap<String, String>,
-    perfer_map: &mut HashMap<String, String>,
-) {
-    let sql_opt = sql_part_map.get(k);
-    if let Some(stat) = sql_opt {
-        if stat.has_include {
-            loop_replace_sql_in_sql(stat, empty_map, sql_part_map, k, perfer_map);
-        }
-    }
-}
-
-fn loop_replace_sql_in_sql(
-    stat: &SqlStatement,
-    empty_map: &HashMap<String, String>,
-    sql_part_map: &HashMap<String, SqlStatement>,
-    k: &String,
-    perfer_map: &mut HashMap<String, String>,
-) {
-    let mut sql = stat.sql.clone();
-    for key in &stat.include_keys {
-        let (new_sql, replace) =
-            replace_included_sql_by_key(&sql, stat, empty_map, sql_part_map, key);
-        debug!("{} {} {} {} {}", stat.id, k, sql, new_sql, replace);
-        if replace {
-            sql = new_sql.clone();
-            perfer_map.insert(String::from(k), new_sql.clone());
-        }
-    }
-}
-
 fn replace_included_sql_by_key(
     sql: &str,
     stat: &SqlStatement,
-    perfer_map: &HashMap<String, String>,
-    sql_part_map: &HashMap<String, SqlStatement>,
+    file_inc_map: &HashMap<String, String>,
     key: &String,
 ) -> (String, bool) {
     debug!("key:::{}", key);
-    let perfer_opt = perfer_map.get(key);
-    if let Some(perfer_sql) = perfer_opt {
-        let new_sql = replace_included_sql(sql, key, perfer_sql);
-        debug!("use perfer_sql: {}", perfer_sql);
-        debug!("use new_sql: {}", new_sql);
-        return (new_sql, true);
-    }
-    let key_opt = sql_part_map.get(key);
+    let key_opt = file_inc_map.get(key);
     if let Some(sql_part) = key_opt {
-        debug!("{}:::-->{}", key, sql_part.sql);
-        debug!("{}:::-->{}", key, sql_part.has_include);
-        let new_sql = replace_included_sql(sql, key, &sql_part.sql);
+        debug!("{}:::-->{}", key, sql_part);
+        let new_sql = replace_included_sql(sql, key, sql_part);
         debug!("{}", new_sql);
         (new_sql, true)
     } else {
@@ -381,9 +376,8 @@ fn compose_comment(leading: &String, line: &String, trailing: &String) -> String
 }
 
 pub(crate) fn var_placeholder(dialect_type: &DialectType) -> &str {
-    let placeholder = match dialect_type {
+    match dialect_type {
         DialectType::Oracle => ":?",
         DialectType::MySQL => "@1",
-    };
-    placeholder
+    }
 }

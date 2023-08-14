@@ -1,6 +1,6 @@
 use log::warn;
 use regex::Regex;
-use std::{collections::HashMap, process};
+use std::process;
 
 pub enum DialectType {
     Oracle,
@@ -39,21 +39,11 @@ pub struct SqlKey {
     pub sql: String,
 }
 
-impl SqlKey {
-    pub fn empty() -> SqlKey {
-        SqlKey {
-            key: String::from(""),
-            sql: String::from(""),
-        }
-    }
-}
-
 pub struct SqlStatement {
     pub mode: Mode,
     pub id: String,
     pub sql: String,
     pub has_include: bool,
-    pub include_keys: Vec<String>,
     pub has_sql_key: bool,
     pub sql_key: SqlKey,
 }
@@ -64,7 +54,6 @@ impl SqlStatement {
         id: String,
         sql: String,
         has_include: bool,
-        include_keys: Vec<String>,
         has_sql_key: bool,
         sql_key: SqlKey,
     ) -> Self {
@@ -73,7 +62,6 @@ impl SqlStatement {
             id,
             sql,
             has_include,
-            include_keys,
             has_sql_key,
             sql_key,
         }
@@ -101,8 +89,6 @@ pub struct XmlParsedState {
     pub current_id: String,
     /// 取键语句ID
     pub current_key_id: String,
-    /// 子集key
-    pub include_keys: Vec<String>,
     /// 循环定义
     pub loop_def: LoopDef,
 
@@ -114,8 +100,6 @@ pub struct XmlParsedState {
     pub key_sql_builder: String,
     /// 语句集
     pub statements: Vec<SqlStatement>,
-    /// 语句集
-    pub sql_part_map: HashMap<String, SqlStatement>,
 
     /// 过程中不再变化
 
@@ -137,13 +121,11 @@ impl XmlParsedState {
             key_sql_builder: String::from(""),
             current_id: String::from(""),
             current_key_id: String::from(""),
-            include_keys: Vec::new(),
             loop_def: LoopDef {
                 suffix: String::from(""),
                 separator: String::from(""),
             },
             statements: Vec::new(),
-            sql_part_map: HashMap::new(),
             filename: String::from(""),
         }
     }
@@ -156,7 +138,6 @@ impl XmlParsedState {
         self.has_sql_key = false;
         self.current_id = String::from("");
         self.current_key_id = String::from("");
-        self.include_keys = Vec::new();
         self.loop_def = LoopDef {
             suffix: String::from(""),
             separator: String::from(""),

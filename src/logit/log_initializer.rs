@@ -12,7 +12,7 @@ const LOG_FORMAT: &str = "[{l}] {m}{n}";
 /// 日志初始化，写入 `stdout`，并写入临时文件夹下 `xbatis2sql.log`
 pub(crate) fn init_logger() {
     static INIT: Once = Once::new();
-    INIT.call_once(|| init_log4rs());
+    INIT.call_once(init_log4rs);
 }
 
 fn init_log4rs() {
@@ -30,12 +30,10 @@ fn init_log4rs() {
     if rs.is_err() {
         eprintln!(
             "hit error: {}",
-            rs.err()
-                .unwrap_or_else(|| {
-                    eprintln!("hit error, failed to parse log4rs config then create the logger");
-                    process::exit(-1);
-                })
-                .to_string()
+            rs.err().unwrap_or_else(|| {
+                eprintln!("hit error, failed to parse log4rs config then create the logger");
+                process::exit(-1);
+            })
         );
         process::exit(-1);
     }

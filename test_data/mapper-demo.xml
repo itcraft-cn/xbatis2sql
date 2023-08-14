@@ -14,6 +14,12 @@
 	e,f,g,h,i
 	</sql>
 
+	<sql id="sql_d">
+		<include refid="sql_b"/>
+		,
+		<include refid="sql_c"/>
+	</sql>
+
 	<insert id="insert">
 		<selectKey keyProperty="a">
 			select 1 from dual
@@ -33,6 +39,15 @@
 		<include refid="sql_b"/>
 		,
 		<include refid="sql_c"/>
+		 FROM tab1 where column1 in
+		<foreach collection="list" index="index" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+	</select>
+
+	<select id="select11">
+		SELECT 
+		<include refid="sql_d"/>
 		 FROM tab1 where column1 in
 		<foreach collection="list" index="index" item="item" open="(" separator="," close=")">
             #{item}
