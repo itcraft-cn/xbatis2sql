@@ -379,3 +379,11 @@ fn comment_tailing2(dialet_type: &DialectType) -> String {
 fn compose_comment(leading: &String, line: &String, trailing: &String) -> String {
     format!("{}{}{}", leading, line, trailing)
 }
+
+pub(crate) fn var_placeholder(dialect_type: &DialectType) -> &str {
+    let placeholder = match dialect_type {
+        DialectType::Oracle => ":?",
+        DialectType::MySQL => "@1",
+    };
+    placeholder
+}

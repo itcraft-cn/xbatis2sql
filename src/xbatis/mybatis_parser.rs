@@ -1,7 +1,7 @@
 use super::{
     def::{DialectType, RegexReplacement, XmlParsedState},
     parse_helper,
-    xbatis_parser::Parser,
+    xbatis_parser::{var_placeholder, Parser},
 };
 use lazy_static::lazy_static;
 use log::warn;
@@ -29,10 +29,7 @@ pub fn create_mybatis_parser(dialect_type: DialectType) -> MyBatisParser {
 }
 
 fn create_replcements(dialect_type: &DialectType) -> Vec<RegexReplacement> {
-    let placeholder = match dialect_type {
-        DialectType::Oracle => ":?",
-        DialectType::MySQL => "@1",
-    };
+    let placeholder = var_placeholder(dialect_type);
     vec![
         RegexReplacement::new("[\t ]?--[^\n]*\n", ""),
         RegexReplacement::new("[\r\n\t ]+", " "),
