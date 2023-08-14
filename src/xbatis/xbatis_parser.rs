@@ -9,6 +9,18 @@ use std::{collections::HashMap, fs, io::BufReader, process};
 use xml::{attribute::OwnedAttribute, name::OwnedName, reader::XmlEvent, EventReader};
 
 lazy_static! {
+    static ref XML_REGEX: Regex = Regex::new("XML-FILE:").unwrap_or_else(|e| {
+        warn!("Unable to parse the regex: {}", e);
+        process::exit(-1);
+    });
+    static ref STAT_REGEX: Regex = Regex::new("STAT-ID:").unwrap_or_else(|e| {
+        warn!("Unable to parse the regex: {}", e);
+        process::exit(-1);
+    });
+    static ref ORA_QUERY_PLAN_REGEX: Regex = Regex::new("DBMS_XPLAN").unwrap_or_else(|e| {
+        warn!("Unable to parse the regex: {}", e);
+        process::exit(-1);
+    });
     static ref INC_REGEX: Regex = Regex::new("__INCLUDE_ID_").unwrap_or_else(|e| {
         warn!("Unable to parse the regex: {}", e);
         process::exit(-1);
@@ -17,7 +29,13 @@ lazy_static! {
 
 /// 解析器
 pub trait Parser {
-    fn setup_dialect_type(&mut self, dialect_type: DialectType);
+    fn setup_gen_explain(&mut self, gen_explain: bool);
+
+    fn is_gen_explain(&self) -> bool;
+
+    fn setup_replace_num(&mut self, replace_num: i16);
+
+    fn replace_num(&self) -> i16;
 
     fn dialect_type(&self) -> &DialectType;
 
@@ -33,7 +51,7 @@ pub trait Parser {
         }
         let mut final_sql_store = Vec::new();
         for sql in replaced_sql_store {
-            self.loop_clear_and_push(&mut final_sql_store, &self.vec_regex(), &sql, false);
+            self.loop_clear_and_push(&mut final_sql_store, self.vec_regex(), &sql, false, false);
         }
         final_sql_store
     }
@@ -51,7 +69,7 @@ pub trait Parser {
             debug!("{}", target);
             new_sql = replace_included_sql(
                 &new_sql,
-                &key.to_ascii_uppercase().as_str(),
+                key.to_ascii_uppercase().as_str(),
                 global_inc_map.get(key).unwrap_or(&target).as_str(),
             )
         }
@@ -285,35 +303,61 @@ pub trait Parser {
             &comment_tailing.to_string(),
         ));
         if stat.has_include {
-            self.clear_and_push(sql_store, &loop_replace_include_part(stat, file_inc_map));
+            self.clear_and_push(
+                sql_store,
+                &loop_replace_include_part(stat, file_inc_map, self.replace_num()),
+                self.is_gen_explain(),
+            );
         } else {
-            self.clear_and_push(sql_store, &stat.sql);
+            self.clear_and_push(sql_store, &stat.sql, self.is_gen_explain());
         }
         if stat.has_sql_key {
             sql_store.push(compose_comment(
-                comment_leading,
+                &comment_leading.to_string(),
                 &stat.sql_key.key,
-                comment_tailing,
+                &comment_tailing.to_string(),
             ));
-            self.clear_and_push(sql_store, &stat.sql_key.sql);
+            self.clear_and_push(sql_store, &stat.sql_key.sql, self.is_gen_explain());
         }
     }
 
-    fn clear_and_push(&self, sql_store: &mut Vec<String>, origin_sql: &str);
+    fn clear_and_push(&self, sql_store: &mut Vec<String>, origin_sql: &str, gen_explain: bool) {
+        self.loop_clear_and_push(sql_store, self.vec_regex(), origin_sql, gen_explain, true);
+    }
 
     fn loop_clear_and_push(
         &self,
         sql_store: &mut Vec<String>,
         regex_replacements: &[RegexReplacement],
         origin_sql: &str,
-        append: bool,
+        gen_explain: bool,
+        append_semicolon: bool,
     ) {
-        let mut sql = String::from(origin_sql.to_ascii_uppercase().trim());
-        for regex_replacement in regex_replacements.iter() {
-            sql = self.regex_clear_and_push(&sql, regex_replacement);
+        let mut sql;
+        if XML_REGEX.is_match(origin_sql)
+            || STAT_REGEX.is_match(origin_sql)
+            || ORA_QUERY_PLAN_REGEX.is_match(origin_sql)
+        {
+            sql = String::from(origin_sql);
+        } else {
+            sql = String::from(origin_sql.to_ascii_uppercase().trim());
+            for regex_replacement in regex_replacements.iter() {
+                sql = self.regex_clear_and_push(&sql, regex_replacement);
+            }
         }
-        if append {
+        if gen_explain && append_semicolon {
+            sql_store.push(format!(
+                "{}{}{}",
+                explain_dialect(self.dialect_type()),
+                sql,
+                ";"
+            ));
+            self.append_oracle_list_plan(sql_store);
+        } else if !gen_explain && append_semicolon {
             sql_store.push(sql + ";");
+        } else if !append_semicolon && gen_explain {
+            sql_store.push(format!("{}{}", explain_dialect(self.dialect_type()), sql));
+            self.append_oracle_list_plan(sql_store);
         } else {
             sql_store.push(sql);
         }
@@ -331,14 +375,26 @@ pub trait Parser {
     }
 
     fn vec_regex(&self) -> &Vec<RegexReplacement>;
+
+    fn append_oracle_list_plan(&self, sql_store: &mut Vec<String>) {
+        match self.dialect_type() {
+            DialectType::Oracle => {
+                sql_store.push(String::from("SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY);"))
+            }
+            _ => {
+                //nothing to do
+            }
+        }
+    }
 }
 
 fn loop_replace_include_part(
     stat: &SqlStatement,
     file_inc_map: &HashMap<String, String>,
+    replace_num: i16,
 ) -> String {
     let mut sql = stat.sql.clone();
-    for _i in 0..10 {
+    for _i in 0..replace_num {
         for key in file_inc_map.keys() {
             let (new_sql, replace) = replace_included_sql_by_key(&sql, stat, file_inc_map, key);
             if replace {
@@ -349,7 +405,7 @@ fn loop_replace_include_part(
             break;
         }
     }
-    return sql;
+    sql
 }
 
 fn replace_included_sql_by_key(
@@ -410,5 +466,12 @@ pub(crate) fn var_placeholder(dialect_type: &DialectType) -> &str {
     match dialect_type {
         DialectType::Oracle => ":?",
         DialectType::MySQL => "@1",
+    }
+}
+
+fn explain_dialect(dialect_type: &DialectType) -> &str {
+    match dialect_type {
+        DialectType::Oracle => "explain plan for ",
+        DialectType::MySQL => "explain ",
     }
 }
