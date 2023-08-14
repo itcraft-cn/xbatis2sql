@@ -1,5 +1,15 @@
 # ChangeLog
 
+## 0.2.5
+
+1. 同文件 `include` 支持的嵌套层数参数化
+2. 新增直接输出 `explain` 语句
+
+## 0.2.4
+
+1. 支持跨文件 `include`
+2. 支持最多 `10` 层同文件 `include`
+
 ## 0.2.3
 
 1. 对 `MyBatis` 的 `xml` 也支持输出 `schema` 代替符： `__REPLACE_SCHEMA__`
