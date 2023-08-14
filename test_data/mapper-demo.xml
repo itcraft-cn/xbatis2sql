@@ -20,6 +20,35 @@
 		<include refid="sql_c"/>
 	</sql>
 
+  <sql id="sql1">
+    select a,b,c,d,e,f,g
+  </sql>
+
+	<sql id="sql2">
+	  <include refid="sql1"/>
+	</sql>
+
+	<sql id="sql3">
+	  <include refid="sql2"/>
+	</sql>
+
+	<sql id="sql4">
+	  <include refid="sql3"/>
+	</sql>
+
+	<sql id="sql5">
+	  <include refid="sql4"/>
+	</sql>
+
+	<sql id="sql6">
+	  <include refid="sql5"/>
+	</sql>
+
+  <select id="select0">
+    <include refid="sql5" />
+    from tab1
+  </select>
+
 	<insert id="insert">
 		<selectKey keyProperty="a">
 			select 1 from dual
