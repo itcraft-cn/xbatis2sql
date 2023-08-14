@@ -1,5 +1,6 @@
 #!/bin/zsh
 
+rm -rf /tmp/xbatis2sql.7z
 rm -rf /tmp/xbatis2sql
 
 mkdir -p /tmp/xbatis2sql/linux_x64
@@ -15,3 +16,4 @@ cp target/x86_64-unknown-linux-musl/release/xbatis2sql /tmp/xbatis2sql/linux_x64
 cp target/x86_64-apple-darwin/release/xbatis2sql /tmp/xbatis2sql/darwin_intel/xbatis2sql
 
 7zz a -sdel /tmp/xbatis2sql.7z /tmp/xbatis2sql
+
