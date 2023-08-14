@@ -28,12 +28,26 @@ fn main() {
     } else if args.show_version {
         args_parser::print_version();
     } else {
-        parse_xbatis_xml(args.mode, args.db_type, &args.src_dir, &args.output_dir);
+        parse_xbatis_xml(
+            args.mode,
+            args.db_type,
+            &args.src_dir,
+            &args.output_dir,
+            args.gen_explain,
+            args.replace_num,
+        );
     }
 }
 
 /// 选择并执行对应的解析器
-fn parse_xbatis_xml(mode: XBatisMode, db_type: DbType, src_dir: &String, output_dir: &String) {
+fn parse_xbatis_xml(
+    mode: XBatisMode,
+    db_type: DbType,
+    src_dir: &String,
+    output_dir: &String,
+    gen_explain: bool,
+    replace_num: i16,
+) {
     log_initializer::init_logger();
     info!(
         "try to parse files in {:?}, fetch sql to {:?}",
@@ -41,7 +55,9 @@ fn parse_xbatis_xml(mode: XBatisMode, db_type: DbType, src_dir: &String, output_
     );
     let mut files: Vec<String> = Vec::new();
     xml_scanner::scan(&mut files, src_dir);
-    let parser = choose_parser(mode, convert(db_type));
+    let mut parser = choose_parser(mode, convert(db_type));
+    parser.setup_gen_explain(gen_explain);
+    parser.setup_replace_num(replace_num);
     let sql_store = parser.parse(&files);
     sql_saver::save(output_dir, sql_store);
 }

@@ -9,6 +9,9 @@ macro_rules! fail {
     }};
 }
 
+const REPLACE_NUM_STR: &str = "10";
+const REPLACE_NUM: i16 = 10;
+
 pub enum XBatisMode {
     NotSupported,
     IBatis,
@@ -36,6 +39,8 @@ pub struct Args {
     pub db_type: DbType,
     pub src_dir: String,
     pub output_dir: String,
+    pub gen_explain: bool,
+    pub replace_num: i16,
     pub fast_fail: bool,
     pub show_version: bool,
     opts: Options,
@@ -47,6 +52,8 @@ impl Args {
         db_type: DbType,
         src_dir: &str,
         output_dir: &str,
+        gen_explain: bool,
+        replace_num: i16,
         opts: Options,
     ) -> Self {
         Args {
@@ -54,6 +61,8 @@ impl Args {
             db_type,
             src_dir: src_dir.to_owned(),
             output_dir: output_dir.to_owned(),
+            gen_explain,
+            replace_num,
             fast_fail: false,
             show_version: false,
             opts,
@@ -66,6 +75,8 @@ impl Args {
             db_type: DbType::Unknown,
             src_dir: String::from(""),
             output_dir: String::from(""),
+            gen_explain: false,
+            replace_num: 0,
             fast_fail: true,
             show_version: false,
             opts,
@@ -78,6 +89,8 @@ impl Args {
             db_type: DbType::Unknown,
             src_dir: String::from(""),
             output_dir: String::from(""),
+            gen_explain: false,
+            replace_num: 0,
             fast_fail: false,
             show_version: true,
             opts,
@@ -102,6 +115,13 @@ fn build_opts() -> Options {
     opts.optopt("t", "type", "db type", "DB");
     opts.optopt("s", "src", "source directory", "SRC");
     opts.optopt("o", "output", "output directory", "OUTPUT");
+    opts.optflag("e", "explain", "generate explain sql");
+    opts.optopt(
+        "n",
+        "num",
+        "times to replace <include> tag, default is 10",
+        "TIMES",
+    );
     opts.optflag("v", "version", "show version information");
     opts.optflag("h", "help", "print this help menu");
     opts
@@ -115,6 +135,11 @@ fn actual_check_args(opts: Options, matches: Matches) -> Args {
     let o_db_type = matches.opt_str("t");
     let src_dir = matches.opt_str("s");
     let output_dir = matches.opt_str("o");
+    let gen_explain = matches.opt_present("e");
+    let num = matches
+        .opt_str("n")
+        .unwrap_or(String::from(REPLACE_NUM_STR))
+        .to_string();
     if help {
         return Args::fail(opts);
     } else if version {
@@ -138,7 +163,15 @@ fn actual_check_args(opts: Options, matches: Matches) -> Args {
     );
     match db_type {
         DbType::Unknown => fail!("must choose db type in oracle or mysql", opts),
-        _ => gen_args(opts, db_type, mode_ibatis, src_dir, output_dir),
+        _ => gen_args(
+            opts,
+            db_type,
+            mode_ibatis,
+            src_dir,
+            output_dir,
+            gen_explain,
+            &num,
+        ),
     }
 }
 
@@ -148,6 +181,8 @@ fn gen_args(
     mode_ibatis: bool,
     src_dir: Option<String>,
     output_dir: Option<String>,
+    gen_explain: bool,
+    num_str: &str,
 ) -> Args {
     let mode = if mode_ibatis {
         XBatisMode::IBatis
@@ -159,6 +194,8 @@ fn gen_args(
         db_type,
         &src_dir.unwrap_or(String::from("")),
         &output_dir.unwrap_or(String::from("")),
+        gen_explain,
+        num_str.parse::<i16>().unwrap_or(REPLACE_NUM),
         opts,
     )
 }
@@ -168,7 +205,7 @@ pub fn print_usage(args: &Args) {
     print!(
         "{}",
         args.opts
-            .usage("Usage: xbatis2sql [-i|-m] -t [Oracle/MySQL] -s ... -o ...")
+            .usage("Usage: xbatis2sql [-i|-m] -t [Oracle/MySQL] -s ... -o ... [-e] [-n 10]")
     );
 }
 

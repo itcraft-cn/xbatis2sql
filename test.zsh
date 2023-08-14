@@ -1,9 +1,9 @@
 #!/bin/zsh
 
-target/debug/xbatis2sql -m -t Oracle -s . -o /tmp
+target/debug/xbatis2sql -m -t Oracle -s . -o /tmp -e
 grep -F "__INCLUDE_" /tmp/result.sql
 mv /tmp/result.sql /tmp/m.result.sql
-target/debug/xbatis2sql -i -t Oracle -s . -o /tmp
+target/debug/xbatis2sql -i -t Oracle -s . -o /tmp -e
 grep -F "__INCLUDE_" /tmp/result.sql
 mv /tmp/result.sql /tmp/i.result.sql
 

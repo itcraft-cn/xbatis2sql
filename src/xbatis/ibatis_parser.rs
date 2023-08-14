@@ -25,6 +25,8 @@ pub fn create_ibatis_parser(dialect_type: DialectType) -> IBatisParser {
     IBatisParser {
         dialect_type,
         re_vec,
+        gen_explain: false,
+        replace_num: 0,
     }
 }
 
@@ -49,11 +51,25 @@ fn create_replcements(dialect_type: &DialectType) -> Vec<RegexReplacement> {
 pub struct IBatisParser {
     dialect_type: DialectType,
     re_vec: Vec<RegexReplacement>,
+    gen_explain: bool,
+    replace_num: i16,
 }
 
 impl Parser for IBatisParser {
-    fn setup_dialect_type(&mut self, dialect_type: DialectType) {
-        self.dialect_type = dialect_type;
+    fn setup_gen_explain(&mut self, gen_explain: bool) {
+        self.gen_explain = gen_explain;
+    }
+
+    fn is_gen_explain(&self) -> bool {
+        self.gen_explain
+    }
+
+    fn setup_replace_num(&mut self, replace_num: i16) {
+        self.replace_num = replace_num;
+    }
+
+    fn replace_num(&self) -> i16 {
+        self.replace_num
     }
 
     fn dialect_type(&self) -> &DialectType {
@@ -88,11 +104,7 @@ impl Parser for IBatisParser {
     ) {
     }
 
-    fn clear_and_push(&self, sql_store: &mut Vec<String>, origin_sql: &str) {
-        self.loop_clear_and_push(sql_store, &self.re_vec, origin_sql, true);
-    }
-
     fn vec_regex(&self) -> &Vec<RegexReplacement> {
-        return &self.re_vec;
+        &self.re_vec
     }
 }

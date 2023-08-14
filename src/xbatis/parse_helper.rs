@@ -11,7 +11,7 @@ pub fn replace_included_sql(orig_sql: &str, id: &str, sql_part: &str) -> String 
         warn!("build regex[{}] failed: {}", replace_target, e);
         process::exit(-1);
     });
-    return rx.replace_all(orig_sql, replaced).to_string();
+    rx.replace_all(orig_sql, replaced).to_string()
 }
 
 /// 检索属性，匹配情况下回调闭包
