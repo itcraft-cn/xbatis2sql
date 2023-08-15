@@ -7,7 +7,7 @@ use log4rs::{
 };
 use std::{process, sync::Once};
 
-const LOG_FORMAT: &str = "[{l}] {m}{n}";
+const LOG_FORMAT: &str = "[{h({l})}] {m}{n}";
 
 /// 日志初始化，写入 `stdout`，并写入临时文件夹下 `xbatis2sql.log`
 pub(crate) fn init_logger() {
