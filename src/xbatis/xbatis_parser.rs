@@ -377,13 +377,8 @@ pub trait Parser {
     fn vec_regex(&self) -> &Vec<RegexReplacement>;
 
     fn append_oracle_list_plan(&self, sql_store: &mut Vec<String>) {
-        match self.dialect_type() {
-            DialectType::Oracle => {
-                sql_store.push(String::from("SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY);"))
-            }
-            _ => {
-                //nothing to do
-            }
+        if let DialectType::Oracle = self.dialect_type() {
+            sql_store.push(String::from("SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY);"))
         }
     }
 }
