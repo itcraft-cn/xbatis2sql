@@ -1,6 +1,7 @@
 target
+.vscode
 
 *.dtd
-
+*.exe
 Cargo.lock
-.vscode/lua.booster.lint.json
+
