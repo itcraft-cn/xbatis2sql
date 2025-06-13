@@ -40,7 +40,7 @@ pub struct SqlKey {
 }
 
 pub struct SqlStatement {
-    pub mode: Mode,
+    pub _mode: Mode,
     pub id: String,
     pub sql: String,
     pub has_include: bool,
@@ -58,7 +58,7 @@ impl SqlStatement {
         sql_key: SqlKey,
     ) -> Self {
         SqlStatement {
-            mode,
+            _mode: mode,
             id,
             sql,
             has_include,

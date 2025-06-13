@@ -368,10 +368,10 @@ pub trait Parser {
         origin_sql: &str,
         regex_replacement: &RegexReplacement,
     ) -> String {
-        return regex_replacement
+        regex_replacement
             .regex
             .replace_all(origin_sql, regex_replacement.target.as_str())
-            .to_string();
+            .to_string()
     }
 
     fn vec_regex(&self) -> &Vec<RegexReplacement>;
@@ -454,7 +454,7 @@ fn comment_tailing2(dialet_type: &DialectType) -> String {
 }
 
 fn compose_comment(leading: &String, line: &String, trailing: &String) -> String {
-    format!("{}{}{}", leading, line, trailing)
+    format!("{leading}{line}{trailing}")
 }
 
 pub(crate) fn var_placeholder(dialect_type: &DialectType) -> &str {

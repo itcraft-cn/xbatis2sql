@@ -23,7 +23,7 @@ fn init_log4rs() {
         .appender(Appender::builder().build("stdout", Box::new(stdout_appender)))
         .build(Root::builder().appender("stdout").build(LevelFilter::Info))
         .unwrap_or_else(|e| {
-            eprintln!("hit error: {}", e);
+            eprintln!("hit error: {e}");
             process::exit(-1);
         });
     let rs = log4rs::init_config(config);
