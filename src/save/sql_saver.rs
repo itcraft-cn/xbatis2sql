@@ -12,11 +12,11 @@ pub fn save(output_dir: &String, sql_store: Vec<String>) {
     );
     let r = File::create(output_dir.to_string() + "/result.sql");
     if r.is_err() {
-        warn!("try to write sql to {:?} failed", output_dir);
+        warn!("try to write sql to {output_dir:?} failed");
         process::exit(-1);
     }
     let mut f = r.unwrap_or_else(|_e| {
-        warn!("try to write sql to {:?} failed", output_dir);
+        warn!("try to write sql to {output_dir:?} failed");
         process::exit(-1);
     });
     for sql in sql_store {
@@ -26,7 +26,7 @@ pub fn save(output_dir: &String, sql_store: Vec<String>) {
     write2file(&mut f, &CRLF, output_dir);
     let fr = f.flush();
     if fr.is_err() {
-        warn!("try to flush file {:?} failed", f);
+        warn!("try to flush file {f:?} failed");
         process::exit(-1);
     }
 }
@@ -34,7 +34,7 @@ pub fn save(output_dir: &String, sql_store: Vec<String>) {
 fn write2file(f: &mut File, bdata: &[u8], output_dir: &String) {
     let wr = f.write(bdata);
     if wr.is_err() {
-        warn!("try to write [{:?}] to {:?} failed", bdata, output_dir);
+        warn!("try to write [{bdata:?}] to {output_dir:?} failed");
         process::exit(-1);
     }
 }

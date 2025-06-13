@@ -50,8 +50,7 @@ fn parse_xbatis_xml(
 ) {
     log_initializer::init_logger();
     info!(
-        "try to parse files in {:?}, fetch sql to {:?}",
-        src_dir, output_dir
+        "try to parse files in {src_dir:?}, fetch sql to {output_dir:?}"
     );
     let mut files: Vec<String> = Vec::new();
     xml_scanner::scan(&mut files, src_dir);

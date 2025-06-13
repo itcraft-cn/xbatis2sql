@@ -156,7 +156,7 @@ impl RegexReplacement {
     pub fn new(regex: &str, target: &str) -> Self {
         RegexReplacement {
             regex: Regex::new(regex).unwrap_or_else(|e| {
-                warn!("failed to compile regex: {}", e);
+                warn!("failed to compile regex: {e}");
                 process::exit(-1);
             }),
             target: String::from(target),

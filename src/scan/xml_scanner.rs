@@ -15,7 +15,7 @@ fn check_if_xml_file(files: &mut Vec<String>, d: Result<DirEntry, Error>) {
         return;
     }
     let entry = d.unwrap_or_else(|e| {
-        warn!("error while walking in directory: {}", e.to_string());
+        warn!("error while walking in directory: {e}");
         process::exit(-1);
     });
     let file_type = entry.file_type();
@@ -25,7 +25,7 @@ fn check_if_xml_file(files: &mut Vec<String>, d: Result<DirEntry, Error>) {
     let opt_ext = Path::new(entry.file_name()).extension();
     if let Some(ext) = opt_ext {
         if "xml".eq(ext) {
-            debug!("file: {:?}", entry);
+            debug!("file: {entry:?}");
             files.push(entry.path().to_string_lossy().to_string());
         }
     }

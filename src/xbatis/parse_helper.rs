@@ -8,7 +8,7 @@ pub fn replace_included_sql(orig_sql: &str, id: &str, sql_part: &str) -> String 
     let replace_target = format!("{}{}{}", "__INCLUDE_ID_", id, "_END__");
     let replaced = sql_part;
     let rx = Regex::new(replace_target.as_str()).unwrap_or_else(|e| {
-        warn!("build regex[{}] failed: {}", replace_target, e);
+        warn!("build regex[{replace_target}] failed: {e}");
         process::exit(-1);
     });
     rx.replace_all(orig_sql, replaced).to_string()

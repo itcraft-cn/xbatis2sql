@@ -11,7 +11,7 @@ use xml::{attribute::OwnedAttribute, name::OwnedName};
 
 lazy_static! {
     static ref RE: Regex = Regex::new("DTD Mapper 3\\.0").unwrap_or_else(|e| {
-        warn!("Unable to parse the regex: {}", e);
+        warn!("Unable to parse the regex: {e}");
         process::exit(-1);
     });
 }

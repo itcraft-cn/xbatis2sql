@@ -10,19 +10,19 @@ use xml::{attribute::OwnedAttribute, name::OwnedName, reader::XmlEvent, EventRea
 
 lazy_static! {
     static ref XML_REGEX: Regex = Regex::new("XML-FILE:").unwrap_or_else(|e| {
-        warn!("Unable to parse the regex: {}", e);
+        warn!("Unable to parse the regex: {e}");
         process::exit(-1);
     });
     static ref STAT_REGEX: Regex = Regex::new("STAT-ID:").unwrap_or_else(|e| {
-        warn!("Unable to parse the regex: {}", e);
+        warn!("Unable to parse the regex: {e}");
         process::exit(-1);
     });
     static ref ORA_QUERY_PLAN_REGEX: Regex = Regex::new("DBMS_XPLAN").unwrap_or_else(|e| {
-        warn!("Unable to parse the regex: {}", e);
+        warn!("Unable to parse the regex: {e}");
         process::exit(-1);
     });
     static ref INC_REGEX: Regex = Regex::new("__INCLUDE_ID_").unwrap_or_else(|e| {
-        warn!("Unable to parse the regex: {}", e);
+        warn!("Unable to parse the regex: {e}");
         process::exit(-1);
     });
 }
@@ -62,18 +62,18 @@ pub trait Parser {
         global_inc_map: &HashMap<String, String>,
     ) -> String {
         debug!("--------------------------------");
-        debug!("{}", sql);
+        debug!("{sql}");
         let mut new_sql = sql.clone();
         for key in global_inc_map.keys() {
             let target = format!("{}{}{}", "__INCLUDE_ID_", key, "_END__").to_ascii_uppercase();
-            debug!("{}", target);
+            debug!("{target}");
             new_sql = replace_included_sql(
                 &new_sql,
                 key.to_ascii_uppercase().as_str(),
                 global_inc_map.get(key).unwrap_or(&target).as_str(),
             )
         }
-        debug!("{}", new_sql);
+        debug!("{new_sql}");
         debug!("--------------------------------");
         new_sql
     }
@@ -85,7 +85,7 @@ pub trait Parser {
         global_inc_map: &mut HashMap<String, String>,
     ) {
         if self.detect_match(file) {
-            info!("try to parse [{}]", file);
+            info!("try to parse [{file}]");
             self.read_and_parse(file, sql_store, global_inc_map);
         }
     }
@@ -127,7 +127,7 @@ pub trait Parser {
             &comment_tailing(self.dialect_type()),
         ));
         let file = fs::File::open(filename).unwrap_or_else(|e| {
-            warn!("open file [{}] failed: {}", filename, e);
+            warn!("open file [{filename}] failed: {e}");
             process::exit(-1);
         });
         let buf = BufReader::new(file);
@@ -145,7 +145,7 @@ pub trait Parser {
                 Ok(XmlEvent::CData(content)) => self.fill_xml_content(&mut state, content),
                 Ok(XmlEvent::Characters(content)) => self.fill_xml_content(&mut state, content),
                 Err(e) => {
-                    warn!("Error: {}", e);
+                    warn!("Error: {e}");
                     break;
                 }
                 _ => {}
@@ -409,12 +409,12 @@ fn replace_included_sql_by_key(
     file_inc_map: &HashMap<String, String>,
     key: &String,
 ) -> (String, bool) {
-    debug!("key:::{}", key);
+    debug!("key:::{key}");
     let key_opt = file_inc_map.get(key);
     if let Some(sql_part) = key_opt {
-        debug!("{}:::-->{}", key, sql_part);
+        debug!("{key}:::-->{sql_part}");
         let new_sql = replace_included_sql(sql, key, sql_part);
-        debug!("{}", new_sql);
+        debug!("{new_sql}");
         (new_sql, true)
     } else {
         warn!(
