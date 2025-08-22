@@ -39,21 +39,28 @@ pub trait Parser {
 
     fn dialect_type(&self) -> &DialectType;
 
-    fn parse(&self, files: &Vec<String>) -> Vec<String> {
+    fn parse(&self, file: &String) -> Option<Vec<String>> {
         let mut sql_store: Vec<String> = Vec::new();
         let mut global_inc_map = HashMap::new();
-        for file in files {
-            self.check_and_parse(file, &mut sql_store, &mut global_inc_map);
+        if self.check_and_parse(file, &mut sql_store, &mut global_inc_map) {
+            let mut replaced_sql_store = Vec::new();
+            for sql in sql_store {
+                replaced_sql_store.push(self.replace_inc_between_xml(&sql, &global_inc_map));
+            }
+            let mut final_sql_store = Vec::new();
+            for sql in replaced_sql_store {
+                self.loop_clear_and_push(
+                    &mut final_sql_store,
+                    self.vec_regex(),
+                    &sql,
+                    false,
+                    false,
+                );
+            }
+            Some(final_sql_store)
+        } else {
+            None
         }
-        let mut replaced_sql_store = Vec::new();
-        for sql in sql_store {
-            replaced_sql_store.push(self.replace_inc_between_xml(&sql, &global_inc_map));
-        }
-        let mut final_sql_store = Vec::new();
-        for sql in replaced_sql_store {
-            self.loop_clear_and_push(&mut final_sql_store, self.vec_regex(), &sql, false, false);
-        }
-        final_sql_store
     }
 
     fn replace_inc_between_xml(
@@ -83,10 +90,13 @@ pub trait Parser {
         file: &String,
         sql_store: &mut Vec<String>,
         global_inc_map: &mut HashMap<String, String>,
-    ) {
+    ) -> bool {
         if self.detect_match(file) {
             info!("try to parse [{file}]");
             self.read_and_parse(file, sql_store, global_inc_map);
+            true
+        } else {
+            false
         }
     }
 

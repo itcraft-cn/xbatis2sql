@@ -12,12 +12,14 @@ macro_rules! fail {
 const REPLACE_NUM_STR: &str = "10";
 const REPLACE_NUM: i16 = 10;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum XBatisMode {
     NotSupported,
     IBatis,
     MyBatis,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DbType {
     Unknown,
     Oracle,
