@@ -66,47 +66,110 @@ fn parse_xbatis_xml(
     let arc_active = Arc::new(AtomicBool::new(true));
     let output_dir_clone = output_dir.clone();
     let arc_queue_writer_clone = arc_queue.clone();
-    let active_writer_clone = arc_active.clone();
-    let handler = thread::spawn(move || {
-        thread::sleep(Duration::from_secs(3));
-        sql_saver::init(&output_dir_clone);
-        loop {
-            let arc_queue_clone = arc_queue_writer_clone.clone();
-            let arc_active_clone = active_writer_clone.clone();
-            if let Ok(sql_store) = arc_queue_clone.pop() {
-                sql_saver::save(sql_store);
-            } else {
-                thread::sleep(Duration::from_millis(100));
-            }
-            if !arc_active_clone.load(Ordering::SeqCst) && arc_queue_clone.is_empty() {
-                break;
-            }
-        }
-        sql_saver::close();
-    });
+    let arc_active_writer_clone = arc_active.clone();
+    let builder = thread::Builder::new().name("xbatis-writer".to_string());
+    let handler = builder
+        .spawn(move || {
+            write_handle(
+                output_dir_clone,
+                arc_queue_writer_clone,
+                arc_active_writer_clone,
+            )
+        })
+        .unwrap();
     for file in files {
-        let limit_clone = arc_limit.clone();
-        if limit_clone.load(Ordering::SeqCst) >= 8 {
+        let arc_limit_clone = arc_limit.clone();
+        while arc_limit_clone.load(Ordering::SeqCst) >= 8 {
             thread::sleep(Duration::from_millis(100));
-            continue;
         }
-        limit_clone.fetch_add(1, Ordering::SeqCst);
-        let arc_queue_clone = arc_queue.clone();
-        thread::spawn(move || {
-            let mut parser = choose_parser(mode, convert(db_type));
-            parser.setup_gen_explain(gen_explain);
-            parser.setup_replace_num(replace_num);
-            if let Some(sql_store) = parser.parse(&file.clone()) {
-                let rs = arc_queue_clone.push(sql_store);
-                if rs.is_err() {
-                    warn!("push to queue failed");
-                }
-            }
-            limit_clone.fetch_sub(1, Ordering::SeqCst);
-        });
+        loop_parse_handle(
+            mode,
+            db_type,
+            gen_explain,
+            replace_num,
+            &arc_queue,
+            &arc_limit,
+            file,
+        );
+    }
+    while arc_limit.load(Ordering::SeqCst) > 0 && !arc_queue.is_empty() {
+        thread::sleep(Duration::from_millis(100));
     }
     arc_active.store(false, Ordering::SeqCst);
     handler.join().unwrap();
+}
+
+fn write_handle(
+    output_dir: String,
+    arc_queue: Arc<ConcurrentQueue<Vec<String>>>,
+    arc_active: Arc<AtomicBool>,
+) {
+    sql_saver::init(&output_dir);
+    loop {
+        let arc_queue_clone = arc_queue.clone();
+        let arc_active_clone = arc_active.clone();
+        if !arc_active_clone.load(Ordering::SeqCst) && arc_queue_clone.is_empty() {
+            info!("all sqls have been saved");
+            break;
+        }
+        if let Ok(sql_store) = arc_queue_clone.pop() {
+            sql_saver::save(sql_store);
+        } else {
+            thread::sleep(Duration::from_millis(100));
+        }
+    }
+    sql_saver::close();
+}
+
+fn loop_parse_handle(
+    mode: XBatisMode,
+    db_type: DbType,
+    gen_explain: bool,
+    replace_num: i16,
+    arc_queue: &Arc<ConcurrentQueue<Vec<String>>>,
+    arc_limit: &Arc<AtomicI16>,
+    file: String,
+) {
+    let arc_limit_clone = arc_limit.clone();
+    let v = arc_limit_clone.fetch_add(1, Ordering::SeqCst);
+    let arc_queue_clone = arc_queue.clone();
+    let builder = thread::Builder::new().name(format!("xbatis-parser-{}", v));
+    let _ = builder.spawn(move || {
+        parse_handle(
+            mode,
+            db_type,
+            gen_explain,
+            replace_num,
+            file,
+            arc_limit_clone,
+            arc_queue_clone,
+        )
+    });
+}
+
+fn parse_handle(
+    mode: XBatisMode,
+    db_type: DbType,
+    gen_explain: bool,
+    replace_num: i16,
+    file: String,
+    arc_limit: Arc<AtomicI16>,
+    arc_queue: Arc<ConcurrentQueue<Vec<String>>>,
+) {
+    let mut parser = choose_parser(mode, convert(db_type));
+    parser.setup_gen_explain(gen_explain);
+    parser.setup_replace_num(replace_num);
+    if let Some(sql_store) = parser.parse(&file.clone()) {
+        while arc_queue.len() >= 100 {
+            thread::sleep(Duration::from_millis(100));
+        }
+        if arc_queue.push(sql_store).is_ok() {
+            //
+        } else {
+            warn!("push to queue failed");
+        }
+    }
+    arc_limit.fetch_sub(1, Ordering::SeqCst);
 }
 
 fn choose_parser(mode: XBatisMode, dialect_type: DialectType) -> Box<dyn Parser> {

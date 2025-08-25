@@ -22,9 +22,12 @@ pub fn init(output_dir: &String) {
 pub fn close() {
     let mtx_f = fetch_global_var_mut::<Mutex<File>>("output_file").unwrap();
     let f = mtx_f.get_mut().unwrap();
-    let fr = f.flush();
-    if fr.is_err() {
+    if f.flush().is_err() {
         warn!("try to flush file {f:?} failed");
+        process::exit(-1);
+    }
+    if f.sync_all().is_err() {
+        warn!("close file {f:?} failed");
         process::exit(-1);
     }
 }
