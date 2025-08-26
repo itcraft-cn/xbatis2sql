@@ -5,12 +5,14 @@ macro_rules! fail {
     ($f:tt, $o:tt) => {{
         eprintln!("Error: {}", $f);
         eprintln!();
-        return Args::fail($o);
+        return (Args::fail(), $o);
     }};
 }
 
 const REPLACE_NUM_STR: &str = "10";
 const REPLACE_NUM: i16 = 10;
+
+const DEFAULT_SQL_LIMIT: &str = "-1";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum XBatisMode {
@@ -36,6 +38,7 @@ impl DbType {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Args {
     pub mode: XBatisMode,
     pub db_type: DbType,
@@ -43,9 +46,9 @@ pub struct Args {
     pub output_dir: String,
     pub gen_explain: bool,
     pub replace_num: i16,
+    pub sql_limit: i16,
     pub fast_fail: bool,
     pub show_version: bool,
-    opts: Options,
 }
 
 impl Args {
@@ -56,7 +59,7 @@ impl Args {
         output_dir: &str,
         gen_explain: bool,
         replace_num: i16,
-        opts: Options,
+        sql_limit: i16,
     ) -> Self {
         Args {
             mode,
@@ -65,13 +68,13 @@ impl Args {
             output_dir: output_dir.to_owned(),
             gen_explain,
             replace_num,
+            sql_limit,
             fast_fail: false,
             show_version: false,
-            opts,
         }
     }
 
-    fn fail(opts: Options) -> Self {
+    fn fail() -> Self {
         Args {
             mode: XBatisMode::NotSupported,
             db_type: DbType::Unknown,
@@ -79,13 +82,13 @@ impl Args {
             output_dir: String::from(""),
             gen_explain: false,
             replace_num: 0,
+            sql_limit: 0,
             fast_fail: true,
             show_version: false,
-            opts,
         }
     }
 
-    fn help(opts: Options) -> Self {
+    fn help() -> Self {
         Args {
             mode: XBatisMode::NotSupported,
             db_type: DbType::Unknown,
@@ -93,15 +96,15 @@ impl Args {
             output_dir: String::from(""),
             gen_explain: false,
             replace_num: 0,
+            sql_limit: 0,
             fast_fail: false,
             show_version: true,
-            opts,
         }
     }
 }
 
 /// 检查参数
-pub fn check_args() -> Args {
+pub fn check_args() -> (Args, Options) {
     let opts = build_opts();
     let args: Vec<String> = env::args().collect();
     match opts.parse(&args[1..]) {
@@ -124,12 +127,13 @@ fn build_opts() -> Options {
         "times to replace <include> tag, default is 10",
         "TIMES",
     );
+    opts.optopt("l", "limit", "sql length limit", "LIMIT");
     opts.optflag("v", "version", "show version information");
     opts.optflag("h", "help", "print this help menu");
     opts
 }
 
-fn actual_check_args(opts: Options, matches: Matches) -> Args {
+fn actual_check_args(opts: Options, matches: Matches) -> (Args, Options) {
     let help = matches.opt_present("h");
     let version = matches.opt_present("v");
     let mode_ibatis = matches.opt_present("i");
@@ -142,10 +146,14 @@ fn actual_check_args(opts: Options, matches: Matches) -> Args {
         .opt_str("n")
         .unwrap_or(String::from(REPLACE_NUM_STR))
         .to_string();
+    let limit = matches
+        .opt_str("l")
+        .unwrap_or(String::from(DEFAULT_SQL_LIMIT))
+        .to_string();
     if help {
-        return Args::fail(opts);
+        return (Args::fail(), opts);
     } else if version {
-        return Args::help(opts);
+        return (Args::help(), opts);
     } else if mode_ibatis && mode_mybatis {
         fail!("just support in mode: iBATIS or MyBatis, not both", opts);
     } else if !mode_ibatis && !mode_mybatis {
@@ -165,49 +173,33 @@ fn actual_check_args(opts: Options, matches: Matches) -> Args {
     );
     match db_type {
         DbType::Unknown => fail!("must choose db type in oracle or mysql", opts),
-        _ => gen_args(
-            opts,
-            db_type,
-            mode_ibatis,
-            src_dir,
-            output_dir,
-            gen_explain,
-            &num,
-        ),
+        _ => {
+            let mode = if mode_ibatis {
+                XBatisMode::IBatis
+            } else {
+                XBatisMode::MyBatis
+            };
+            (
+                Args::new(
+                    mode,
+                    db_type,
+                    &src_dir.unwrap_or(String::from("")),
+                    &output_dir.unwrap_or(String::from("")),
+                    gen_explain,
+                    num.parse::<i16>().unwrap_or(REPLACE_NUM),
+                    limit.parse::<i16>().unwrap_or(REPLACE_NUM),
+                ),
+                opts,
+            )
+        }
     }
 }
 
-fn gen_args(
-    opts: Options,
-    db_type: DbType,
-    mode_ibatis: bool,
-    src_dir: Option<String>,
-    output_dir: Option<String>,
-    gen_explain: bool,
-    num_str: &str,
-) -> Args {
-    let mode = if mode_ibatis {
-        XBatisMode::IBatis
-    } else {
-        XBatisMode::MyBatis
-    };
-    Args::new(
-        mode,
-        db_type,
-        &src_dir.unwrap_or(String::from("")),
-        &output_dir.unwrap_or(String::from("")),
-        gen_explain,
-        num_str.parse::<i16>().unwrap_or(REPLACE_NUM),
-        opts,
-    )
-}
-
 /// 打印使用方法
-pub fn print_usage(args: &Args) {
+pub fn print_usage(options: &Options) {
     print!(
         "{}",
-        args.opts
-            .usage("Usage: xbatis2sql [-i|-m] -t [Oracle/MySQL] -s ... -o ... [-e] [-n 10]")
+        options.usage("Usage: xbatis2sql [-i|-m] -t [Oracle/MySQL] -s ... -o ... [-e] [-n 10] [-l 1000]")
     );
 }
 

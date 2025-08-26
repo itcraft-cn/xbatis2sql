@@ -27,6 +27,7 @@ pub fn create_mybatis_parser(dialect_type: DialectType) -> MyBatisParser {
         re_vec,
         gen_explain: false,
         replace_num: 0,
+        sql_limit: 0,
     }
 }
 
@@ -53,6 +54,7 @@ pub struct MyBatisParser {
     re_vec: Vec<RegexReplacement>,
     gen_explain: bool,
     replace_num: i16,
+    sql_limit: i16,
 }
 
 impl Parser for MyBatisParser {
@@ -68,8 +70,20 @@ impl Parser for MyBatisParser {
         self.replace_num = replace_num;
     }
 
+    fn setup_sql_limit(&mut self, sql_limit: i16) {
+        self.sql_limit = sql_limit;
+    }
+
     fn replace_num(&self) -> i16 {
         self.replace_num
+    }
+
+    fn is_sql_limit(&self) -> bool{
+        self.sql_limit > 0
+    }
+
+    fn sql_limit(&self) -> i16{
+        self.sql_limit
     }
 
     fn dialect_type(&self) -> &DialectType {

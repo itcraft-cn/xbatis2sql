@@ -33,6 +33,9 @@ pub fn close() {
 }
 
 pub fn save(sql_store: Vec<String>) {
+    if sql_store.is_empty() {
+        return;
+    }
     let mtx_f = fetch_global_var_mut::<Mutex<File>>("output_file").unwrap();
     let f = mtx_f.get_mut().unwrap();
     for sql in sql_store {

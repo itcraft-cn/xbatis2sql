@@ -35,7 +35,13 @@ pub trait Parser {
 
     fn setup_replace_num(&mut self, replace_num: i16);
 
+    fn setup_sql_limit(&mut self, sql_limit: i16);
+
     fn replace_num(&self) -> i16;
+
+    fn is_sql_limit(&self) -> bool;
+
+    fn sql_limit(&self) -> i16;
 
     fn dialect_type(&self) -> &DialectType;
 
@@ -49,18 +55,28 @@ pub trait Parser {
             }
             let mut final_sql_store = Vec::new();
             for sql in replaced_sql_store {
-                self.loop_clear_and_push(
-                    &mut final_sql_store,
-                    self.vec_regex(),
-                    &sql,
-                    false,
-                    false,
-                );
+                final_sql_store.push(self.replace_sql(self.vec_regex(), &sql));
             }
             Some(final_sql_store)
         } else {
             None
         }
+    }
+
+    fn replace_sql(&self, regex_replacements: &[RegexReplacement], origin_sql: &str) -> String {
+        let mut sql;
+        if XML_REGEX.is_match(origin_sql)
+            || STAT_REGEX.is_match(origin_sql)
+            || ORA_QUERY_PLAN_REGEX.is_match(origin_sql)
+        {
+            sql = String::from(origin_sql);
+        } else {
+            sql = String::from(origin_sql.to_ascii_uppercase().trim());
+            for regex_replacement in regex_replacements.iter() {
+                sql = self.regex_clear_and_push(&sql, regex_replacement);
+            }
+        }
+        sql
     }
 
     fn replace_inc_between_xml(
@@ -131,11 +147,11 @@ pub trait Parser {
         global_inc_map: &mut HashMap<String, String>,
     ) {
         let mut file_inc_map = HashMap::new();
-        sql_store.push(compose_comment(
+        let filename_sql = compose_comment(
             &comment_leading(self.dialect_type()),
             &filename.to_string(),
             &comment_tailing(self.dialect_type()),
-        ));
+        );
         let file = fs::File::open(filename).unwrap_or_else(|e| {
             warn!("open file [{filename}] failed: {e}");
             process::exit(-1);
@@ -162,6 +178,9 @@ pub trait Parser {
             }
         }
         self.replace_and_fill(sql_store, &state.statements, &file_inc_map);
+        if !sql_store.is_empty() {
+            sql_store.insert(0, filename_sql);
+        }
     }
 
     fn fill_xml_content(&self, state: &mut XmlParsedState, content: String) {
@@ -307,69 +326,90 @@ pub trait Parser {
         file_inc_map: &HashMap<String, String>,
     ) {
         debug!("----------------------------------------------------------------");
-        sql_store.push(compose_comment(
+        let stat_id_sql = compose_comment(
             &comment_leading.to_string(),
             &String::from(&stat.id),
             &comment_tailing.to_string(),
-        ));
+        );
         if stat.has_include {
             self.clear_and_push(
                 sql_store,
+                &stat_id_sql,
                 &loop_replace_include_part(stat, file_inc_map, self.replace_num()),
                 self.is_gen_explain(),
             );
         } else {
-            self.clear_and_push(sql_store, &stat.sql, self.is_gen_explain());
+            self.clear_and_push(sql_store, &stat_id_sql, &stat.sql, self.is_gen_explain());
         }
         if stat.has_sql_key {
-            sql_store.push(compose_comment(
+            let stat_id_key_sql = compose_comment(
                 &comment_leading.to_string(),
                 &stat.sql_key.key,
                 &comment_tailing.to_string(),
-            ));
-            self.clear_and_push(sql_store, &stat.sql_key.sql, self.is_gen_explain());
+            );
+            self.clear_and_push(
+                sql_store,
+                &stat_id_key_sql,
+                &stat.sql_key.sql,
+                self.is_gen_explain(),
+            );
         }
     }
 
-    fn clear_and_push(&self, sql_store: &mut Vec<String>, origin_sql: &str, gen_explain: bool) {
-        self.loop_clear_and_push(sql_store, self.vec_regex(), origin_sql, gen_explain, true);
+    fn clear_and_push(
+        &self,
+        sql_store: &mut Vec<String>,
+        id_sql: &str,
+        origin_sql: &str,
+        gen_explain: bool,
+    ) {
+        self.loop_clear_and_push(
+            sql_store,
+            id_sql,
+            self.vec_regex(),
+            origin_sql,
+            gen_explain,
+            true,
+        );
     }
 
     fn loop_clear_and_push(
         &self,
         sql_store: &mut Vec<String>,
+        id_sql: &str,
         regex_replacements: &[RegexReplacement],
         origin_sql: &str,
         gen_explain: bool,
         append_semicolon: bool,
     ) {
-        let mut sql;
-        if XML_REGEX.is_match(origin_sql)
-            || STAT_REGEX.is_match(origin_sql)
-            || ORA_QUERY_PLAN_REGEX.is_match(origin_sql)
-        {
-            sql = String::from(origin_sql);
-        } else {
-            sql = String::from(origin_sql.to_ascii_uppercase().trim());
-            for regex_replacement in regex_replacements.iter() {
-                sql = self.regex_clear_and_push(&sql, regex_replacement);
-            }
-        }
+        let sql = self.replace_sql(regex_replacements, origin_sql);
         if gen_explain && append_semicolon {
-            sql_store.push(format!(
-                "{}{}{}",
-                explain_dialect(self.dialect_type()),
-                sql,
-                ";"
-            ));
-            self.append_oracle_list_plan(sql_store);
+            let sql = format!("{}{}{}", explain_dialect(self.dialect_type()), sql, ";");
+            self.push_to_sql_store(sql_store, id_sql, sql, true);
         } else if !gen_explain && append_semicolon {
-            sql_store.push(sql + ";");
+            let sql = sql + ";";
+            self.push_to_sql_store(sql_store, id_sql, sql, false);
         } else if !append_semicolon && gen_explain {
-            sql_store.push(format!("{}{}", explain_dialect(self.dialect_type()), sql));
-            self.append_oracle_list_plan(sql_store);
+            let sql = format!("{}{}", explain_dialect(self.dialect_type()), sql);
+            self.push_to_sql_store(sql_store, id_sql, sql, true);
         } else {
+            self.push_to_sql_store(sql_store, id_sql, sql, false);
+        }
+    }
+
+    fn push_to_sql_store(
+        &self,
+        sql_store: &mut Vec<String>,
+        id_sql: &str,
+        sql: String,
+        append_oracle_list_plan: bool,
+    ) {
+        if !self.is_sql_limit() || (self.is_sql_limit() && sql.len() > self.sql_limit() as usize) {
+            sql_store.push(String::from(id_sql));
             sql_store.push(sql);
+            if append_oracle_list_plan {
+                self.append_oracle_list_plan(sql_store);
+            }
         }
     }
 

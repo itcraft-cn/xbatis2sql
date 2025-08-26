@@ -12,7 +12,7 @@ mod scan;
 mod xbatis;
 
 use crate::{
-    args::args_parser::{self, DbType, XBatisMode},
+    args::args_parser::{self, Args, DbType, XBatisMode},
     logit::log_initializer,
     save::sql_saver,
     scan::xml_scanner,
@@ -31,32 +31,20 @@ use std::{
 
 /// 主函数，解析参数并调用后续函数
 fn main() {
-    let args = args_parser::check_args();
+    let (args, options) = args_parser::check_args();
     if args.fast_fail {
-        args_parser::print_usage(&args);
+        args_parser::print_usage(&options);
     } else if args.show_version {
         args_parser::print_version();
     } else {
-        parse_xbatis_xml(
-            args.mode,
-            args.db_type,
-            &args.src_dir,
-            &args.output_dir,
-            args.gen_explain,
-            args.replace_num,
-        );
+        parse_xbatis_xml(&args);
     }
 }
 
 /// 选择并执行对应的解析器
-fn parse_xbatis_xml(
-    mode: XBatisMode,
-    db_type: DbType,
-    src_dir: &String,
-    output_dir: &String,
-    gen_explain: bool,
-    replace_num: i16,
-) {
+fn parse_xbatis_xml(args: &Args) {
+    let src_dir = &args.src_dir;
+    let output_dir = &args.output_dir;
     log_initializer::init_logger();
     info!("try to parse files in {src_dir:?}, fetch sql to {output_dir:?}");
     let mut files: Vec<String> = Vec::new();
@@ -82,15 +70,7 @@ fn parse_xbatis_xml(
         while arc_limit_clone.load(Ordering::SeqCst) >= 8 {
             thread::sleep(Duration::from_millis(100));
         }
-        loop_parse_handle(
-            mode,
-            db_type,
-            gen_explain,
-            replace_num,
-            &arc_queue,
-            &arc_limit,
-            file,
-        );
+        loop_parse_handle(args, &arc_queue, &arc_limit, file);
     }
     while arc_limit.load(Ordering::SeqCst) > 0 && !arc_queue.is_empty() {
         thread::sleep(Duration::from_millis(100));
@@ -122,10 +102,7 @@ fn write_handle(
 }
 
 fn loop_parse_handle(
-    mode: XBatisMode,
-    db_type: DbType,
-    gen_explain: bool,
-    replace_num: i16,
+    args: &Args,
     arc_queue: &Arc<ConcurrentQueue<Vec<String>>>,
     arc_limit: &Arc<AtomicI16>,
     file: String,
@@ -133,32 +110,26 @@ fn loop_parse_handle(
     let arc_limit_clone = arc_limit.clone();
     let v = arc_limit_clone.fetch_add(1, Ordering::SeqCst);
     let arc_queue_clone = arc_queue.clone();
+    let args_clone = args.clone();
     let builder = thread::Builder::new().name(format!("xbatis-parser-{}", v));
-    let _ = builder.spawn(move || {
-        parse_handle(
-            mode,
-            db_type,
-            gen_explain,
-            replace_num,
-            file,
-            arc_limit_clone,
-            arc_queue_clone,
-        )
-    });
+    let _ = builder.spawn(move || parse_handle(args_clone, file, arc_limit_clone, arc_queue_clone));
 }
 
 fn parse_handle(
-    mode: XBatisMode,
-    db_type: DbType,
-    gen_explain: bool,
-    replace_num: i16,
+    args: Args,
     file: String,
     arc_limit: Arc<AtomicI16>,
     arc_queue: Arc<ConcurrentQueue<Vec<String>>>,
 ) {
+    let mode = args.mode;
+    let db_type = args.db_type;
+    let gen_explain = args.gen_explain;
+    let replace_num = args.replace_num;
+    let sql_limit = args.sql_limit;
     let mut parser = choose_parser(mode, convert(db_type));
     parser.setup_gen_explain(gen_explain);
     parser.setup_replace_num(replace_num);
+    parser.setup_sql_limit(sql_limit);
     if let Some(sql_store) = parser.parse(&file.clone()) {
         while arc_queue.len() >= 100 {
             thread::sleep(Duration::from_millis(100));
