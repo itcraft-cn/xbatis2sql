@@ -14,7 +14,7 @@ cargo install xbatis2sql
 
 ```verilog
 # xbatis2sql -h
-Usage: xbatis2sql [-i|-m] -t [Oracle/MySQL] -s ... -o ... [-e] [-n 10]
+Usage: xbatis2sql [-i|-m] -t [Oracle/MySQL] -s ... -o ... [-e] [-n 10] [-l 1000]
 
 Options:
     -i, --ibatis        try to parse iBATIS sqlmap files
@@ -24,6 +24,8 @@ Options:
     -o, --output OUTPUT output directory
     -e, --explain       generate explain sql
     -n, --num TIMES     times to replace <include> tag, default is 10
+    -l, --limit LIMIT   sql length limit
+    -v, --version       show version information
     -h, --help          print this help menu
 ```
 
