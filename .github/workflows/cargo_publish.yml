@@ -1,7 +1,7 @@
 name: Publish to crates.io
 on:
   push:
-    branches: ['v*']  # Triggers when pushing branches starting with 'v'
+    tags: ['v*']  # Triggers when pushing branches starting with 'v'
 jobs:
   publish:
     runs-on: ubuntu-latest
