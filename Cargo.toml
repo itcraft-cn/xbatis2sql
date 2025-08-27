@@ -1,6 +1,6 @@
 [package]
 name = "xbatis2sql"
-version = "0.2.8-dev" # managed by updgitver
+version = "0.2.8" # managed by updgitver
 edition = "2021"
 authors = ["Helly Guo <hellyguo@foxmail.com>"]
 exclude = ["tests", "test_data", "examples", ".vscode", "*.zsh"]
