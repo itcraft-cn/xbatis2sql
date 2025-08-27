@@ -21,9 +21,10 @@ use crate::{
 use concurrent_queue::ConcurrentQueue;
 use log::{info, warn};
 use std::{
+    collections::HashMap,
     sync::{
         atomic::{AtomicBool, AtomicI16, Ordering},
-        Arc,
+        Arc, Mutex,
     },
     thread,
     time::Duration,
@@ -52,6 +53,8 @@ fn parse_xbatis_xml(args: &Args) {
     let arc_queue = Arc::new(ConcurrentQueue::<Vec<String>>::unbounded());
     let arc_limit = Arc::new(AtomicI16::new(0));
     let arc_active = Arc::new(AtomicBool::new(true));
+    let arc_global_inc_map: Arc<Mutex<HashMap<String, String>>> =
+        Arc::new(Mutex::new(HashMap::new()));
     let output_dir_clone = output_dir.clone();
     let arc_queue_writer_clone = arc_queue.clone();
     let arc_active_writer_clone = arc_active.clone();
@@ -70,13 +73,14 @@ fn parse_xbatis_xml(args: &Args) {
         while arc_limit_clone.load(Ordering::SeqCst) >= 8 {
             thread::sleep(Duration::from_millis(100));
         }
-        loop_parse_handle(args, &arc_queue, &arc_limit, file);
+        loop_parse_handle(args, &arc_queue, &arc_limit, &arc_global_inc_map, file);
     }
     while arc_limit.load(Ordering::SeqCst) > 0 && !arc_queue.is_empty() {
         thread::sleep(Duration::from_millis(100));
     }
     arc_active.store(false, Ordering::SeqCst);
     handler.join().unwrap();
+    sql_saver::rewrite(create_parser(args), arc_global_inc_map);
 }
 
 fn write_handle(
@@ -105,14 +109,24 @@ fn loop_parse_handle(
     args: &Args,
     arc_queue: &Arc<ConcurrentQueue<Vec<String>>>,
     arc_limit: &Arc<AtomicI16>,
+    arc_global_inc_map: &Arc<Mutex<HashMap<String, String>>>,
     file: String,
 ) {
-    let arc_limit_clone = arc_limit.clone();
-    let v = arc_limit_clone.fetch_add(1, Ordering::SeqCst);
-    let arc_queue_clone = arc_queue.clone();
     let args_clone = args.clone();
+    let arc_limit_clone = arc_limit.clone();
+    let arc_queue_clone = arc_queue.clone();
+    let arc_global_inc_map_clone = arc_global_inc_map.clone();
+    let v = arc_limit_clone.fetch_add(1, Ordering::SeqCst);
     let builder = thread::Builder::new().name(format!("xbatis-parser-{}", v));
-    let _ = builder.spawn(move || parse_handle(args_clone, file, arc_limit_clone, arc_queue_clone));
+    let _ = builder.spawn(move || {
+        parse_handle(
+            args_clone,
+            file,
+            arc_limit_clone,
+            arc_queue_clone,
+            arc_global_inc_map_clone,
+        )
+    });
 }
 
 fn parse_handle(
@@ -120,17 +134,10 @@ fn parse_handle(
     file: String,
     arc_limit: Arc<AtomicI16>,
     arc_queue: Arc<ConcurrentQueue<Vec<String>>>,
+    arc_global_inc_map_clone: Arc<Mutex<HashMap<String, String>>>,
 ) {
-    let mode = args.mode;
-    let db_type = args.db_type;
-    let gen_explain = args.gen_explain;
-    let replace_num = args.replace_num;
-    let sql_limit = args.sql_limit;
-    let mut parser = choose_parser(mode, convert(db_type));
-    parser.setup_gen_explain(gen_explain);
-    parser.setup_replace_num(replace_num);
-    parser.setup_sql_limit(sql_limit);
-    if let Some(sql_store) = parser.parse(&file.clone()) {
+    let parser = create_parser(&args);
+    if let Some(sql_store) = parser.parse(&file.clone(), arc_global_inc_map_clone) {
         while arc_queue.len() >= 100 {
             thread::sleep(Duration::from_millis(100));
         }
@@ -141,6 +148,19 @@ fn parse_handle(
         }
     }
     arc_limit.fetch_sub(1, Ordering::SeqCst);
+}
+
+fn create_parser(args: &Args) -> Box<dyn Parser> {
+    let mode = args.mode;
+    let db_type = args.db_type;
+    let gen_explain = args.gen_explain;
+    let replace_num = args.replace_num;
+    let sql_limit = args.sql_limit;
+    let mut parser = choose_parser(mode, convert(db_type));
+    parser.setup_gen_explain(gen_explain);
+    parser.setup_replace_num(replace_num);
+    parser.setup_sql_limit(sql_limit);
+    parser
 }
 
 fn choose_parser(mode: XBatisMode, dialect_type: DialectType) -> Box<dyn Parser> {

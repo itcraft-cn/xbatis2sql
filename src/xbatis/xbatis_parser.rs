@@ -5,7 +5,13 @@ use super::{
 use lazy_static::lazy_static;
 use log::{debug, info, warn};
 use regex::Regex;
-use std::{collections::HashMap, fs, io::BufReader, process};
+use std::{
+    collections::HashMap,
+    fs,
+    io::BufReader,
+    process,
+    sync::{Arc, Mutex},
+};
 use xml::{attribute::OwnedAttribute, name::OwnedName, reader::XmlEvent, EventReader};
 
 lazy_static! {
@@ -45,25 +51,38 @@ pub trait Parser {
 
     fn dialect_type(&self) -> &DialectType;
 
-    fn parse(&self, file: &String) -> Option<Vec<String>> {
+    fn parse(
+        &self,
+        file: &String,
+        arc_global_inc_map: Arc<Mutex<HashMap<String, String>>>,
+    ) -> Option<Vec<String>> {
         let mut sql_store: Vec<String> = Vec::new();
-        let mut global_inc_map = HashMap::new();
-        if self.check_and_parse(file, &mut sql_store, &mut global_inc_map) {
-            let mut replaced_sql_store = Vec::new();
-            for sql in sql_store {
-                replaced_sql_store.push(self.replace_inc_between_xml(&sql, &global_inc_map));
+        if let Ok(mut global_inc_map) = arc_global_inc_map.lock() {
+            if self.check_and_parse(file, &mut sql_store, &mut global_inc_map) {
+                Some(sql_store)
+            } else {
+                None
             }
-            let mut final_sql_store = Vec::new();
-            for sql in replaced_sql_store {
-                final_sql_store.push(self.replace_sql(self.vec_regex(), &sql));
-            }
-            Some(final_sql_store)
         } else {
             None
         }
     }
 
-    fn replace_sql(&self, regex_replacements: &[RegexReplacement], origin_sql: &str) -> String {
+    fn replace_final_sql(
+        &self,
+        arc_global_inc_map: Arc<Mutex<HashMap<String, String>>>,
+        sql: &str,
+    ) -> String {
+        if let Ok(global_inc_map) = arc_global_inc_map.lock() {
+            let sql = self.replace_inc_between_xml(&String::from(sql), &global_inc_map);
+            self.replace_sql_by_regex(&sql)
+        } else {
+            "".to_string()
+        }
+    }
+
+    fn replace_sql_by_regex(&self, origin_sql: &str) -> String {
+        let regex_replacements = self.vec_regex();
         let mut sql;
         if XML_REGEX.is_match(origin_sql)
             || STAT_REGEX.is_match(origin_sql)
@@ -363,26 +382,18 @@ pub trait Parser {
         origin_sql: &str,
         gen_explain: bool,
     ) {
-        self.loop_clear_and_push(
-            sql_store,
-            id_sql,
-            self.vec_regex(),
-            origin_sql,
-            gen_explain,
-            true,
-        );
+        self.loop_clear_and_push(sql_store, id_sql, origin_sql, gen_explain, true);
     }
 
     fn loop_clear_and_push(
         &self,
         sql_store: &mut Vec<String>,
         id_sql: &str,
-        regex_replacements: &[RegexReplacement],
         origin_sql: &str,
         gen_explain: bool,
         append_semicolon: bool,
     ) {
-        let sql = self.replace_sql(regex_replacements, origin_sql);
+        let sql = self.replace_sql_by_regex(origin_sql);
         if gen_explain && append_semicolon {
             let sql = format!("{}{}{}", explain_dialect(self.dialect_type()), sql, ";");
             self.push_to_sql_store(sql_store, id_sql, sql, true);
